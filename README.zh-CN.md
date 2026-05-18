@@ -4,6 +4,10 @@
 
 把图片生成 Forza Horizon 6 可导入的 Vinyl Group 图层。
 
+感谢 @zjl88858 的 GPU 生成器参考代码：https://github.com/zjl88858/forza-painter-geometrize-gpu
+
+## 导入参考视频：https://www.bilibili.com/video/BV1hG5Z6nENZ
+
 这个工具包含两部分：
 
 - 使用 GPU/OpenCL 生成 geometry JSON。

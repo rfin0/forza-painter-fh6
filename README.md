@@ -4,6 +4,12 @@
 
 Generate Forza Horizon 6 Vinyl Group layers from images.
 
+GPU generator reference code by @zjl88858: https://github.com/zjl88858/forza-painter-geometrize-gpu
+
+## Import Walkthrough Video
+
+https://www.bilibili.com/video/BV1hG5Z6nENZ
+
 This tool has two jobs:
 
 - Generate geometry JSON with the bundled GPU/OpenCL generator.
