@@ -34,6 +34,12 @@ FH6_AUTO_LOCATE_TIMEOUT_SECONDS = 160
 _CV2_CACHE = None
 _CV2_ERROR = None
 
+LANGUAGES = {
+    "English": "en",
+    "中文": "zh",
+    "한국어": "ko",
+}
+
 
 TEXT = {
     "en": {
@@ -252,6 +258,115 @@ Notes
 - 旧 FH5 签名链仍保留用于兼容；FH6/Steam 构建优先使用运行时自动定位。
 - FH6 地址只对当前游戏进程和当前编辑器状态有效。
 - 如果软件找不到安全模板，请确认编辑器仍然打开、模板已经 ungroup、层数填写完全正确。
+""",
+    },
+    "ko": {
+        "title": app_title(),
+        "subtitle": "geometry JSON을 생성하고 Forza Horizon 비닐 그룹 편집기로 가져옵니다.",
+        "language": "언어",
+        "process": "게임 프로세스",
+        "refresh": "새로고침",
+        "generate_tab": "JSON 생성",
+        "import_tab": "가져오기",
+        "tools_tab": "FH6 도구",
+        "tutorial_tab": "튜토리얼",
+        "images": "이미지",
+        "add_images": "이미지 추가",
+        "quality": "품질 프로필",
+        "custom_settings": "사용자 설정 사용",
+        "custom_layers": "출력 레이어",
+        "custom_resolution": "최대 해상도",
+        "custom_random": "무작위 샘플",
+        "custom_mutated": "변형 샘플",
+        "custom_save_at": "체크포인트 저장",
+        "custom_panel_title": "사용자 설정",
+        "custom_panel_hint": "선택한 프리셋 값이 자동으로 채워집니다. 생성 전에 값을 바꾸려면 사용자 설정을 켜세요.",
+        "generate_step_image": "1단계 - 이미지 선택",
+        "generate_step_image_hint": "PNG/JPG/BMP 이미지를 추가하세요. 생성된 JSON은 원본 이미지 옆에 저장됩니다.",
+        "generate_step_quality": "2단계 - 품질 선택",
+        "generate_step_quality_hint": "빠른 프로필은 시간이 적게 걸립니다. 느린 프로필은 GPU 시간을 더 쓰지만 보통 더 깔끔합니다.",
+        "generate_step_run": "3단계 - 생성",
+        "generate_step_run_hint": "한 번 클릭한 뒤 기다리세요. 진행 상황은 로그에 표시되고, 생성된 JSON은 가져오기 페이지에 자동으로 추가됩니다.",
+        "scroll_hint": "이미지를 추가하고 프리셋을 선택한 뒤, 필요하면 사용자 설정을 조정하세요.",
+        "start_generate": "현재 설정으로 생성",
+        "stop_generate": "현재 생성 중지",
+        "open_output": "출력 폴더 열기",
+        "preview": "미리보기",
+        "preview_hint": "이미지나 JSON을 선택하면 여기에 미리보기가 표시됩니다.",
+        "preview_unavailable": "미리보기를 사용할 수 없습니다. 선택 미리보기 의존성을 설치하거나, 미리보기 없이 계속 진행하세요.",
+        "logs": "로그",
+        "export_logs": "자세한 로그 내보내기",
+        "progress": "진행 상황",
+        "json_files": "Geometry JSON 파일",
+        "add_json": "JSON 추가",
+        "use_outputs": "생성된 JSON 사용",
+        "step_game": "1단계 - 게임",
+        "step_game_hint": "FH6를 실행하고 비닐 그룹 편집기를 연 뒤, 그룹 해제된 구체 템플릿을 불러오고 프로세스 목록을 새로고침하세요.",
+        "step_template": "2단계 - 템플릿",
+        "step_template_hint": "현재 게임 안 템플릿에 표시된 정확한 레이어 수를 입력하세요.",
+        "step_json": "3단계 - JSON",
+        "step_json_hint": "이 앱에서 생성한 JSON을 사용하거나 geometry JSON을 직접 추가하세요.",
+        "step_import": "4단계 - 가져오기",
+        "step_import_hint": "가져오기를 한 번만 클릭하세요. 앱이 FH6 레이어 테이블을 안전하게 찾은 뒤 디자인을 씁니다.",
+        "advanced_options": "고급 옵션",
+        "show_advanced": "고급 옵션 표시",
+        "hide_advanced": "고급 옵션 숨기기",
+        "import_preview": "선택한 JSON 미리보기",
+        "game_profile": "게임 프로필",
+        "pid": "PID",
+        "layer_count": "템플릿 레이어 수",
+        "easy_import": "간편 가져오기",
+        "easy_import_hint": "FH6에서는 주소를 비워두세요. 앱이 현재 세션을 재사용하거나 가져오기 전에 자동으로 찾습니다.",
+        "manual_count": "레이어 수 주소",
+        "manual_table": "레이어 테이블 주소",
+        "auto_locate": "FH6 자동 찾기",
+        "import_json": "JSON 가져오기",
+        "diagnose": "진단",
+        "save_snapshot": "레이어 수 스냅샷 저장",
+        "compare_snapshot": "스냅샷 비교",
+        "snapshot_count": "스냅샷 레이어 수",
+        "current_count": "현재 레이어 수",
+        "inspect_table": "테이블 검사",
+        "table_address": "후보 테이블",
+        "admin_note": "가져오기는 관리자 권한이 필요합니다. OpenProcess 실패가 보이면 이 앱을 관리자 권한으로 실행하세요.",
+        "no_game": "지원되는 게임 프로세스를 찾지 못했습니다",
+        "ready": "준비됨",
+        "running": "실행 중",
+        "done": "완료",
+        "failed": "실패",
+        "stopped": "중지됨",
+        "no_generation_running": "현재 실행 중인 생성 작업이 없습니다.",
+        "stopping_generation": "현재 생성을 중지하는 중...",
+        "generation_stopped": "생성이 중지되었습니다.",
+        "locating": "현재 FH6 템플릿을 찾는 중...",
+        "located": "FH6 템플릿을 찾고 검증했습니다.",
+        "importing": "JSON을 FH6로 가져오는 중...",
+        "json_too_small": "선택한 JSON의 그릴 수 있는 레이어 수가 템플릿 사용 가능 용량보다 훨씬 적습니다. 가져오면 흐릿해 보이므로 더 높은 레이어 JSON을 선택하세요.",
+        "json_needs_more_template_layers": "FH는 커버 저장과 적용 범위를 올바르게 처리하려면 경계 레이어 4개가 필요합니다. JSON의 그릴 수 있는 레이어 수 + 4 이상인 템플릿을 사용하세요.",
+        "safe_stop": "안전한 FH6 템플릿을 찾지 못해 쓰기 전에 중지했습니다.",
+        "tutorial": """초보자용 작업 순서
+
+1. 가능하면 64비트 Python 3.12를 설치한 뒤 install_dependencies.bat을 실행하세요.
+   NumPy/OpenCV 미리보기는 선택 기능입니다. 생성과 가져오기는 이 의존성 없이도 동작합니다.
+   JSON 생성은 포함된 GPU/OpenCL 생성기를 사용하므로 그래픽 드라이버를 최신 상태로 유지하세요.
+
+2. Forza Horizon 6를 실행하고 Create Vinyl Group / Vinyl Group Editor로 들어갑니다.
+
+3. 많은 단순 sphere 레이어로 만든 템플릿을 불러오거나 새로 만드세요. 500개 이상의 레이어를 권장합니다. 가져오기 전에는 반드시 템플릿을 ungroup해야 합니다.
+
+4. 이 앱의 JSON 생성 페이지에서 PNG/JPG/BMP 이미지를 추가하고 품질 프로필을 선택한 뒤 생성 시작을 클릭하세요. 미리보기 의존성이 있으면 미리보기 영역에 원본 이미지가 먼저 표시되고, JSON이 만들어지면 생성된 geometry 미리보기가 표시됩니다.
+
+5. 가져오기 페이지를 여세요. 생성된 JSON을 추가하거나 생성된 JSON 사용을 클릭하세요. 게임 프로필은 Forza Horizon 6로 둡니다.
+
+6. 현재 게임에 불러온 템플릿의 실제 레이어 수를 입력하세요. FH6에서는 보통 메모리 주소를 직접 입력할 필요가 없습니다. JSON 가져오기를 클릭하면 필요할 때 앱이 현재 FH6 레이어 테이블을 자동으로 찾습니다.
+
+7. OpenProcess 또는 권한 오류가 보이면 앱을 닫고 관리자 권한으로 다시 실행하세요. 게임을 다시 시작했거나, 다른 메뉴로 이동했거나, 템플릿을 다시 불러왔다면 정확한 레이어 수로 다시 자동 찾기 또는 가져오기를 실행하세요.
+
+참고
+
+- 기존 FH5 시그니처 체인은 호환성을 위해 유지됩니다. FH6/Steam 빌드는 런타임 자동 찾기를 우선 사용해야 합니다.
+- 현재 FH6 주소는 현재 게임 프로세스와 현재 편집기 상태에서만 유효합니다.
+- 앱이 안전한 템플릿을 찾지 못하면 편집기가 열려 있는지, 템플릿이 ungroup 상태인지, 레이어 수가 정확한지 확인하세요.
 """,
     },
 }
@@ -568,7 +683,7 @@ class App:
         right = Frame(header)
         right.pack(side=RIGHT)
         self._label(right, "language").pack(anchor="e")
-        self.lang_combo = ttk.Combobox(right, values=["English", "中文"], state="readonly", width=10)
+        self.lang_combo = ttk.Combobox(right, values=list(LANGUAGES.keys()), state="readonly", width=10)
         self.lang_combo.set("English")
         self.lang_combo.pack(anchor="e")
         self.lang_combo.bind("<<ComboboxSelected>>", self._on_language)
@@ -817,7 +932,7 @@ class App:
         return widget
 
     def _on_language(self, _event=None):
-        self.lang = "zh" if self.lang_combo.get() == "中文" else "en"
+        self.lang = LANGUAGES.get(self.lang_combo.get(), "en")
         for widget, key, option in self.translated:
             try:
                 widget.config(**{option: tr(self.lang, key)})
@@ -1017,7 +1132,7 @@ class App:
         seconds = max(0, int(round(seconds)))
         hours, remainder = divmod(seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        suffix = "剩余" if self.lang == "zh" else "left"
+        suffix = {"zh": "剩余", "ko": "남음"}.get(self.lang, "left")
         if hours:
             return f"{hours}h {minutes:02d}m {suffix}"
         if minutes:
