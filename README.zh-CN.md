@@ -15,14 +15,14 @@
 </p>
 
 <p align="center">
-  <code>v1.4.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.4.1</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
 </p>
 
 把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要手动填写内存地址。
 
 > **画面发糊先看这里：** 优先提高生成页里的 `Random samples / 随机样本`。随机样本数在 **200000 以上** 通常会有明显质变；数值越高越清晰，但生成时间也会明显增加。
 
-> **导入过慢：** 新版本（>v1.4.0）更新了读取算法并把超时提升到了两分钟，若超时未完成请上传issue并附带日志文件。
+> **导入过慢：** v1.4.1 起会依次尝试 v1.3 和 v1.4 两套 FH6 模板定位逻辑，并在必要时使用 RTTI fallback。自动定位最长可能需要 5 分钟；请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单，若仍失败请导出详细日志并提交 issue。
 
 | 功能 | 说明 |
 | --- | --- |
@@ -149,6 +149,14 @@ check_environment.bat
 - 如果导入后画面很糊，通常是导入了较低层数 checkpoint，或者生成时 `Output layers` 设置太低。
 
 ## 更新日志
+
+### v1.4.1 / 2026-05-21
+
+- 版本更新到 `v1.4.1`，发布包名称同步为 `forza-painter-fh6-v1.4.1.zip`。
+- FH6 模板自动定位现在会先尝试 v1.3 的小/中内存区地址顺序扫描，再尝试 v1.4 的大内存区分块扫描，兼容两类用户环境。
+- 增加 RTTI vtable fallback 定位路径，用于更难定位的 FH6 session；写入前仍保留原有安全验证。
+- FH6 自动定位时间预算提高到 300 秒，App 外层保护超时提高到 360 秒。
+- 自动定位开始前增加等待提示，提醒用户保持 Vinyl Group Editor 打开、不要切换菜单并耐心等待。
 
 ### v1.4.0 / 2026-05-21
 

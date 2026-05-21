@@ -15,14 +15,14 @@
 </p>
 
 <p align="center">
-  <code>v1.4.0</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
+  <code>v1.4.1</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code>
 </p>
 
 Generate Forza Horizon 6 Vinyl Group layers from PNG/JPG/BMP images. The desktop app handles generation, preview, and import in one place; normal users do not need to type memory addresses.
 
 > **If the result looks blurry:** raise `Random samples` first. Values above **200000** usually make a major quality difference; higher values are clearer but take much longer to generate.
 
->  **Import is too slow:** The new version (>v1.4.0) has updated the reading algorithm and increased the timeout limit to two minutes. If the process times out before finishing, please submit an issue and attach your log file.
+>  **Import is too slow:** The new version (v1.4.1+) tries both the v1.3 and v1.4 FH6 template locators, then falls back to RTTI scanning. Auto-location can take up to 5 minutes; keep FH6 in Vinyl Group Editor and attach an exported detailed log if it still fails.
 
 | What it does | Details |
 | --- | --- |
@@ -171,6 +171,14 @@ The app locates and verifies the current FH6 layer table before writing. If the 
 - Transparent PNG backgrounds are not imported as visible backgrounds.
 
 ## Changelog
+
+### v1.4.1 / 2026-05-21
+
+- Updated the app version to `v1.4.1`; release packages now use `forza-painter-fh6-v1.4.1.zip`.
+- FH6 template auto-location now tries both the v1.3 small/medium-region address-order scan and the v1.4 large-region chunked scan before giving up.
+- Added an RTTI vtable fallback locator for difficult FH6 sessions while keeping the existing safe table validation before writing.
+- Raised the FH6 auto-location budget to 300 seconds, with a 360-second outer watchdog timeout.
+- Added a user-facing wait message before FH6 auto-location starts, warning users to keep the Vinyl Group Editor open and avoid switching menus.
 
 ### v1.4.0 / 2026-05-21
 

@@ -373,11 +373,23 @@ def read_region(pid, base, size, max_size=256 * 1024 * 1024):
     return memory
 
 
-def scan_typed_regions(pid, pattern, region_type, writable_only=False, alignment=1, stop_after=None):
+def scan_typed_regions(
+    pid,
+    pattern,
+    region_type,
+    writable_only=False,
+    alignment=1,
+    stop_after=None,
+    started=None,
+    max_seconds=None,
+):
     if not pattern:
         return []
     matches = []
     for base, size, _protect, _type in iter_regions(pid, type_filter=region_type, writable_only=writable_only):
+        if started is not None and max_seconds and time.monotonic() - started > max_seconds:
+            print(f"Stopped typed-region scan after {max_seconds} seconds.", flush=True)
+            return matches
         memory = read_region(pid, base, size)
         if not memory:
             continue
@@ -395,9 +407,12 @@ def scan_typed_regions(pid, pattern, region_type, writable_only=False, alignment
     return matches
 
 
-def find_first_pattern_in_typed_regions(pid, patterns, region_type):
+def find_first_pattern_in_typed_regions(pid, patterns, region_type, started=None, max_seconds=None):
     patterns = [pattern for pattern in patterns if pattern]
     for base, size, _protect, _type in iter_regions(pid, type_filter=region_type, writable_only=False):
+        if started is not None and max_seconds and time.monotonic() - started > max_seconds:
+            print(f"Stopped typed-region scan after {max_seconds} seconds.", flush=True)
+            return None, None
         memory = read_region(pid, base, size)
         if not memory:
             continue
@@ -414,10 +429,17 @@ def find_first_pattern_in_typed_regions(pid, patterns, region_type):
     return None, None
 
 
-def locate_clivery_group_rtti(pid):
+def locate_clivery_group_rtti(pid, max_seconds=None):
+    started = time.monotonic()
     patterns = load_update_code_patterns()
     print(f"Loaded {len(patterns)} CLiveryGroup update-code patterns.", flush=True)
-    descriptor_match, descriptor_pattern = find_first_pattern_in_typed_regions(pid, patterns, MEM_IMAGE)
+    descriptor_match, descriptor_pattern = find_first_pattern_in_typed_regions(
+        pid,
+        patterns,
+        MEM_IMAGE,
+        started=started,
+        max_seconds=max_seconds,
+    )
     descriptor_address = descriptor_match - 0x10 if descriptor_match else None
     if not descriptor_address:
         print("ERROR: Failed to find the CLiveryGroup descriptor address.", flush=True)
@@ -436,7 +458,15 @@ def locate_clivery_group_rtti(pid):
 
     info_pattern = struct.pack("<I", descriptor_offset)
     info_addresses = []
-    for address in scan_typed_regions(pid, info_pattern, MEM_IMAGE, writable_only=False, alignment=4):
+    for address in scan_typed_regions(
+        pid,
+        info_pattern,
+        MEM_IMAGE,
+        writable_only=False,
+        alignment=4,
+        started=started,
+        max_seconds=max_seconds,
+    ):
         info_address = address - 0xC
         try:
             signature = read_process_memory(pid, info_address, 1)
@@ -452,8 +482,19 @@ def locate_clivery_group_rtti(pid):
 
     vtables = []
     for info_address in info_addresses:
+        if max_seconds and time.monotonic() - started > max_seconds:
+            print(f"Stopped RTTI vtable scan after {max_seconds} seconds.", flush=True)
+            break
         pattern = struct.pack("<Q", info_address)
-        for address in scan_typed_regions(pid, pattern, MEM_IMAGE, writable_only=False, alignment=8):
+        for address in scan_typed_regions(
+            pid,
+            pattern,
+            MEM_IMAGE,
+            writable_only=False,
+            alignment=8,
+            started=started,
+            max_seconds=max_seconds,
+        ):
             vtables.append(address + 8)
     vtables = sorted(set(vtables))
     print(f"VTP found: {len(vtables)}", flush=True)
@@ -468,8 +509,9 @@ def locate_clivery_group_rtti(pid):
     }
 
 
-def locate_clivery_groups_by_rtti(pid, profile, layer_count):
-    rtti = locate_clivery_group_rtti(pid)
+def locate_clivery_groups_by_rtti(pid, profile, layer_count, max_seconds=None):
+    started = time.monotonic()
+    rtti = locate_clivery_group_rtti(pid, max_seconds=max_seconds)
     if not rtti:
         return []
 
@@ -477,6 +519,9 @@ def locate_clivery_groups_by_rtti(pid, profile, layer_count):
     vtable_patterns = [(vtable, struct.pack("<Q", vtable)) for vtable in rtti["vtables"]]
     private_regions = list(iter_regions(pid, type_filter=MEM_PRIVATE, writable_only=True))
     for base, size, _protect, _type in private_regions:
+        if max_seconds and time.monotonic() - started > max_seconds:
+            print(f"Stopped RTTI heap scan after {max_seconds} seconds.", flush=True)
+            break
         memory = read_region(pid, base, size)
         if not memory:
             continue
@@ -529,30 +574,46 @@ def locate_clivery_groups_by_rtti(pid, profile, layer_count):
     return groups
 
 
-def locate_clivery_groups_by_layout_count(pid, profile, layer_count, max_seconds=None, max_candidates=200000):
+def locate_clivery_groups_by_layout_count(
+    pid,
+    profile,
+    layer_count,
+    max_seconds=None,
+    max_candidates=200000,
+    strategy_name="layout-size-desc",
+    region_order="size_desc",
+    max_region_size=None,
+):
     started = time.monotonic()
     pattern = struct.pack("<H", layer_count)
     groups = []
     candidates = 0
     scanned = 0
     chunk_size = 4 * 1024 * 1024
-    # Scan larger writable private regions first. FH6 can contain many unrelated
-    # layer-count-sized values; address-order scans may hit max_candidates before
-    # reaching the active LiveryGroup region on some systems.
-    regions = sorted(
-        iter_regions(pid, type_filter=MEM_PRIVATE, writable_only=True),
-        key=lambda item: item[1],
-        reverse=True,
+    regions = list(iter_regions(pid, type_filter=MEM_PRIVATE, writable_only=True))
+    if max_region_size is not None:
+        regions = [region for region in regions if region[1] <= max_region_size]
+    if region_order == "size_desc":
+        # FH6 can put the active LiveryGroup inside very large heap regions.
+        regions.sort(key=lambda item: item[1], reverse=True)
+    elif region_order == "address_asc":
+        # v1.3-compatible path: useful when huge noisy regions would consume
+        # the v1.4 large-first scan budget before the old small-region hit.
+        regions.sort(key=lambda item: item[0])
+    print(
+        f"Trying FH6 locator strategy {strategy_name}: regions={len(regions)} "
+        f"order={region_order} maxRegion={max_region_size or 'none'}",
+        flush=True,
     )
     for base, size, _protect, _type in regions:
         if max_seconds and time.monotonic() - started > max_seconds:
-            print(f"Stopped FH6 layout-count scan after {max_seconds} seconds.", flush=True)
+            print(f"Stopped FH6 {strategy_name} scan after {max_seconds} seconds.", flush=True)
             break
         offset = 0
         carry = b""
         while offset < size:
             if max_seconds and time.monotonic() - started > max_seconds:
-                print(f"Stopped FH6 layout-count scan after {max_seconds} seconds.", flush=True)
+                print(f"Stopped FH6 {strategy_name} scan after {max_seconds} seconds.", flush=True)
                 break
             to_read = min(chunk_size, size - offset)
             chunk_base = base + offset
@@ -573,7 +634,7 @@ def locate_clivery_groups_by_layout_count(pid, profile, layer_count, max_seconds
                 start = pos + 1
                 candidates += 1
                 if candidates > max_candidates:
-                    print(f"Stopped FH6 layout-count scan after {max_candidates} count hits.", flush=True)
+                    print(f"Stopped FH6 {strategy_name} scan after {max_candidates} count hits.", flush=True)
                     return groups
                 count_address = scan_base + pos
                 group_address = count_address - profile.livery_count_offset
@@ -600,14 +661,14 @@ def locate_clivery_groups_by_layout_count(pid, profile, layer_count, max_seconds
                     "count_address": count_address,
                     "table_pointer_field": table_field,
                     "table_address": table_address,
-                    "count_kind": "u16_group_layout",
+                    "count_kind": f"u16_group_layout:{strategy_name}",
                     "current_u16": layer_count,
                     "current_u32": layer_count,
                     "samples": samples,
                     "validated_entries": valid_entries,
                 })
                 print(
-                    f"layout candidate group=0x{group_address:x} count=0x{count_address:x} "
+                    f"{strategy_name} candidate group=0x{group_address:x} count=0x{count_address:x} "
                     f"table=0x{table_address:x} validated={valid_entries}/{layer_count}",
                     flush=True,
                 )
@@ -615,7 +676,11 @@ def locate_clivery_groups_by_layout_count(pid, profile, layer_count, max_seconds
             offset += to_read
         if groups:
             break
-    print(f"FH6 layout-count scan checked {scanned // (1024 * 1024)} MB, count hits={candidates}.", flush=True)
+    print(
+        f"FH6 {strategy_name} scan checked {scanned // (1024 * 1024)} MB, "
+        f"count hits={candidates}.",
+        flush=True,
+    )
     groups.sort(key=lambda item: item["score"], reverse=True)
     return groups
 
@@ -638,22 +703,64 @@ def auto_locate_count_table(pid, profile, layer_count, limit_mb, max_matches, pr
     print(f"Auto-locating FH6 layer count/table for count {layer_count}...")
     started = time.monotonic()
 
+    def remaining_seconds():
+        if not max_seconds:
+            return None
+        return max(0.0, max_seconds - (time.monotonic() - started))
+
     if profile.key == "fh6":
-        fast_groups = locate_clivery_groups_by_layout_count(
-            pid,
-            profile,
-            layer_count,
-            max_seconds=max_seconds,
-            max_candidates=max_matches,
-        )
+        fast_groups = []
+        # Use both known FH6 heap layouts instead of forcing users to choose
+        # between v1.3 and v1.4 behavior. The first path mirrors v1.3's
+        # small/medium region address-order scan; the second path is the v1.4
+        # large-region chunked scan.
+        strategies = [
+            {
+                "strategy_name": "layout-v1.3-small-address-order",
+                "region_order": "address_asc",
+                "max_region_size": 256 * 1024 * 1024,
+            },
+            {
+                "strategy_name": "layout-v1.4-large-size-order",
+                "region_order": "size_desc",
+                "max_region_size": None,
+            },
+        ]
+        for strategy in strategies:
+            remaining = remaining_seconds()
+            if remaining is not None and remaining <= 0:
+                print("Stopped FH6 locator before next strategy because the time budget is exhausted.", flush=True)
+                break
+            fast_groups = locate_clivery_groups_by_layout_count(
+                pid,
+                profile,
+                layer_count,
+                max_seconds=remaining,
+                max_candidates=max_matches,
+                **strategy,
+            )
+            if fast_groups:
+                break
+        if not fast_groups:
+            remaining = remaining_seconds()
+            if remaining is None or remaining > 10:
+                print("Trying FH6 locator strategy rtti-vtable-fallback.", flush=True)
+                fast_groups = locate_clivery_groups_by_rtti(
+                    pid,
+                    profile,
+                    layer_count,
+                    max_seconds=remaining,
+                )
+            else:
+                print("Skipping RTTI fallback because the FH6 locator time budget is nearly exhausted.", flush=True)
     else:
-        fast_groups = locate_clivery_groups_by_rtti(pid, profile, layer_count)
+        fast_groups = locate_clivery_groups_by_rtti(pid, profile, layer_count, max_seconds=max_seconds)
         if not fast_groups:
             fast_groups = locate_clivery_groups_by_layout_count(
                 pid,
                 profile,
                 layer_count,
-                max_seconds=max_seconds,
+                max_seconds=remaining_seconds(),
                 max_candidates=max_matches,
             )
     if fast_groups:

@@ -29,8 +29,8 @@ MEMORY_SNAPSHOT_LIMIT_MB = 2048
 PREVIEW_MAX = 520
 DETAILED_LOG_OUTPUT_LIMIT = 50000
 DETAILED_LOG_MEMORY_LIMIT = 120000
-FH6_AUTO_LOCATE_MAX_SECONDS = 120
-FH6_AUTO_LOCATE_TIMEOUT_SECONDS = 160
+FH6_AUTO_LOCATE_MAX_SECONDS = 300
+FH6_AUTO_LOCATE_TIMEOUT_SECONDS = 360
 _CV2_CACHE = None
 _CV2_ERROR = None
 
@@ -121,6 +121,7 @@ TEXT = {
         "stopping_generation": "Stopping current generation...",
         "generation_stopped": "Generation stopped.",
         "locating": "Finding current FH6 template...",
+        "locating_wait": "This can take up to 5 minutes. Keep FH6 in the Vinyl Group Editor, do not switch menus, and wait patiently.",
         "located": "FH6 template located and verified.",
         "importing": "Importing JSON into FH6...",
         "json_too_small": "Selected JSON has far fewer drawable layers than the usable template capacity. Import will look blurry; choose a higher-layer JSON.",
@@ -230,6 +231,7 @@ Notes
         "stopping_generation": "正在中断当前生成...",
         "generation_stopped": "生成已中断。",
         "locating": "正在查找当前 FH6 模板...",
+        "locating_wait": "这一步最长可能需要 5 分钟。请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单，耐心等待。",
         "located": "已安全定位并验证 FH6 模板。",
         "importing": "正在导入 JSON 到 FH6...",
         "json_too_small": "当前 JSON 可绘制层数远少于模板可用容量，导入会很糊；请换用更高层数的 JSON。",
@@ -339,6 +341,7 @@ Notes
         "stopping_generation": "현재 생성을 중지하는 중...",
         "generation_stopped": "생성이 중지되었습니다.",
         "locating": "현재 FH6 템플릿을 찾는 중...",
+        "locating_wait": "최대 5분 정도 걸릴 수 있습니다. FH6를 Vinyl Group Editor에 그대로 두고 메뉴를 전환하지 말고 기다려 주세요.",
         "located": "FH6 템플릿을 찾고 검증했습니다.",
         "importing": "JSON을 FH6로 가져오는 중...",
         "json_too_small": "선택한 JSON의 그릴 수 있는 레이어 수가 템플릿 사용 가능 용량보다 훨씬 적습니다. 가져오면 흐릿해 보이므로 더 높은 레이어 JSON을 선택하세요.",
@@ -1719,6 +1722,7 @@ class App:
             "--max-seconds",
             str(FH6_AUTO_LOCATE_MAX_SECONDS),
         ]
+        self.queue.put(("log", tr(self.lang, "locating_wait")))
         code = self.run_subprocess(cmd, timeout=FH6_AUTO_LOCATE_TIMEOUT_SECONDS)
         located = False
         if code == 0 and SESSION_PATH.exists():
