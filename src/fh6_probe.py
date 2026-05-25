@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import base64
 import ctypes
@@ -14,6 +16,7 @@ import psutil
 from app_paths import ROOT, SOURCE_DIR
 from game_profiles import get_profile
 from native import dereference_pointer, get_base_address, read_int, read_process_memory
+from utils import parse_int
 
 
 MEM_COMMIT = 0x1000
@@ -122,12 +125,6 @@ def read_float_pair(pid, address):
     if len(raw) != 8:
         return None
     return struct.unpack("ff", raw)
-
-
-def parse_int(value):
-    if value is None:
-        return None
-    return int(str(value), 0)
 
 
 def format_bytes(raw, width=16):

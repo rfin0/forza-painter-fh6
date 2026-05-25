@@ -1,23 +1,34 @@
+from __future__ import annotations
+
 import json
+from enum import IntEnum
 from pathlib import Path
 
+from utils import clamp_byte
 
-RECTANGLE = 1
-ROTATED_ELLIPSE = 16
+
+class ShapeType(IntEnum):
+    RECTANGLE = 1
+    ROTATED_ELLIPSE = 16
+
+
+# Backwards-compatible module-level aliases.
+RECTANGLE = ShapeType.RECTANGLE
+ROTATED_ELLIPSE = ShapeType.ROTATED_ELLIPSE
 
 
 TYPE_ALIASES = {
-    "1": RECTANGLE,
-    "rect": RECTANGLE,
-    "rectangle": RECTANGLE,
-    "box": RECTANGLE,
-    "16": ROTATED_ELLIPSE,
-    "ellipse": ROTATED_ELLIPSE,
-    "ellipsis": ROTATED_ELLIPSE,
-    "rotatedellipse": ROTATED_ELLIPSE,
-    "rotated_ellipse": ROTATED_ELLIPSE,
-    "rotated ellipsis": ROTATED_ELLIPSE,
-    "rotated ellipse": ROTATED_ELLIPSE,
+    "1": ShapeType.RECTANGLE,
+    "rect": ShapeType.RECTANGLE,
+    "rectangle": ShapeType.RECTANGLE,
+    "box": ShapeType.RECTANGLE,
+    "16": ShapeType.ROTATED_ELLIPSE,
+    "ellipse": ShapeType.ROTATED_ELLIPSE,
+    "ellipsis": ShapeType.ROTATED_ELLIPSE,
+    "rotatedellipse": ShapeType.ROTATED_ELLIPSE,
+    "rotated_ellipse": ShapeType.ROTATED_ELLIPSE,
+    "rotated ellipsis": ShapeType.ROTATED_ELLIPSE,
+    "rotated ellipse": ShapeType.ROTATED_ELLIPSE,
 }
 
 
@@ -45,7 +56,7 @@ def normalize_geometry_payload(payload):
     else:
         width, height = _infer_size(payload, normalized)
         background = {
-            "type": RECTANGLE,
+            "type": ShapeType.RECTANGLE,
             "data": [0, 0, width, height],
             "color": [0, 0, 0, 0],
             "score": 0,
@@ -69,7 +80,7 @@ def drawable_shape_count(path):
         color = shape.get("color", [])
         if len(color) == 4 and int(color[3]) <= 0:
             continue
-        if int(shape.get("type", 0)) in (RECTANGLE, ROTATED_ELLIPSE):
+        if int(shape.get("type", 0)) in (ShapeType.RECTANGLE, ShapeType.ROTATED_ELLIPSE):
             count += 1
     return count
 
@@ -96,7 +107,7 @@ def _normalize_shape(shape):
     if not isinstance(shape, dict):
         return None
     type_id = _normalize_type(_pick(shape, "type", "Type", "shapeType", "ShapeType", "primitive", "Primitive"))
-    if type_id not in (RECTANGLE, ROTATED_ELLIPSE):
+    if type_id not in (ShapeType.RECTANGLE, ShapeType.ROTATED_ELLIPSE):
         return None
     data = _normalize_data(shape, type_id)
     color = _normalize_color(_pick(shape, "color", "Color", "colour", "Colour", "rgba", "RGBA"))
@@ -147,7 +158,7 @@ def _normalize_data(shape, type_id):
     except (TypeError, ValueError):
         return None
 
-    if type_id == RECTANGLE:
+    if type_id == ShapeType.RECTANGLE:
         return [round(x), round(y), max(0, round(w)), max(0, round(h))]
     return [round(x), round(y), max(1, round(w)), max(1, round(h)), round(rot) % 360]
 
@@ -174,11 +185,11 @@ def _normalize_color(value):
         return None
     if all(0.0 <= v <= 1.0 for v in nums):
         nums = [v * 255.0 for v in nums]
-    return [_clamp_byte(v) for v in nums]
+    return [clamp_byte(v) for v in nums]
 
 
 def _looks_like_background(shape):
-    if int(shape.get("type", 0)) != RECTANGLE:
+    if int(shape.get("type", 0)) != ShapeType.RECTANGLE:
         return False
     data = shape.get("data", [])
     if len(data) != 4:
@@ -218,10 +229,4 @@ def _pick(mapping, *keys):
     return None
 
 
-def _clamp_byte(value):
-    value = int(round(value))
-    if value < 0:
-        return 0
-    if value > 255:
-        return 255
-    return value
+# _clamp_byte has moved to utils.clamp_byte for shared use.

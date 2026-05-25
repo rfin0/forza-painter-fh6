@@ -22,15 +22,9 @@ from geometry_json import RECTANGLE, ROTATED_ELLIPSE, load_normalized_geometry
 import colorsys
 import os
 
+from utils import load_cv2, parse_int
+
 FH6_DISCOVERED_TABLE_POINTER_DELTA = 0x1E
-_CV2_CACHE = None
-_CV2_ERROR = None
-
-
-def parse_int(value):
-    if value is None or value == "":
-        return None
-    return int(str(value), 0)
 
 
 def is_admin():
@@ -38,21 +32,6 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
-
-def load_cv2():
-    global _CV2_CACHE, _CV2_ERROR
-    if _CV2_CACHE is not None:
-        return _CV2_CACHE
-    if _CV2_ERROR is not None:
-        return None
-    try:
-        cv2 = importlib.import_module("cv2")
-        np = importlib.import_module("numpy")
-        _CV2_CACHE = (cv2, np)
-        return _CV2_CACHE
-    except BaseException as exc:
-        _CV2_ERROR = exc
-        return None
 
 def show_image(image):
     print("External preview windows are disabled. Use the desktop app preview panel instead.")
@@ -427,7 +406,6 @@ if __name__ == "__main__":
         try:
             main(sys.argv)
         except BaseException:
-            import sys
             print(sys.exc_info()[0])
             import traceback
             print(traceback.format_exc())

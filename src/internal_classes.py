@@ -5,24 +5,33 @@
 # License: MIT
 # Year: 2022
 
+from __future__ import annotations
+
 import struct
+from dataclasses import dataclass
 
+
+@dataclass(frozen=True)
 class Color:
-    r: int
-    g: int
-    b: int
-    a: int
-    def __init__(self, r=0, g=0, b=0, a=255):
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
-    def get_struct(self):
-        return (  struct.pack('B', self.r)
-                + struct.pack('B', self.g)
-                + struct.pack('B', self.b)
-                + struct.pack('B', self.a))
+    r: int = 0
+    g: int = 0
+    b: int = 0
+    a: int = 255
 
+    def __post_init__(self):
+        for name in ("r", "g", "b", "a"):
+            val = getattr(self, name)
+            if not isinstance(val, int) or not 0 <= val <= 255:
+                raise ValueError(
+                    f"Color.{name} must be an int in [0, 255], got {val!r}"
+                )
+
+    def get_struct(self) -> bytes:
+        """Pack the color into a 4-byte BGRA struct (matches Forza memory layout)."""
+        return struct.pack("BBBB", self.r, self.g, self.b, self.a)
+
+
+@dataclass(frozen=True)
 class Shape:
     type_id: int
     x: int
@@ -32,12 +41,3 @@ class Shape:
     rot_deg: int
     color: Color
     is_mask: bool
-    def __init__(self, type_id, x, y, w, h, rot_deg, color: Color, is_mask):
-        self.type_id = type_id
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-        self.rot_deg = rot_deg
-        self.color = color
-        self.is_mask = is_mask

@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 import os
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Iterable
 
 from app_paths import RESOURCE_ROOT, ROOT
 from geometry_json import drawable_shape_count
+from utils import PreprocessError
 
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
 
 BUNDLED_SETTINGS_DIR = RESOURCE_ROOT / "config" / "settings"
 USER_SETTINGS_DIR = ROOT / "config" / "settings"
@@ -18,7 +27,11 @@ GENERATOR_JSON_SCAN_SECONDS = 2.0
 GENERATOR_POLL_SLEEP_SECONDS = 0.2
 
 
-SETTING_KEYS = (
+# ---------------------------------------------------------------------------
+# Setting keys
+# ---------------------------------------------------------------------------
+
+SETTING_KEYS: tuple[str, ...] = (
     "maxPreviewSize",
     "maxResolution",
     "maxThreads",
@@ -135,7 +148,44 @@ def build_generator_env():
     return env
 
 
-def setting_description(path):
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class SettingProfile:
+    """Represents a single settings preset (bundled or user).
+
+    Supports both attribute access (``.path``) and dict-style access
+    (``setting['path']``) for backward compatibility with legacy UI code.
+    """
+
+    index: int
+    source: str
+    path: Path
+    label: str
+    description: str = ""
+    values: dict[str, str] = field(default_factory=dict)
+
+    def __getitem__(self, key: str):
+        # AttributeError → KeyError for dict-style backward compat.
+        try:
+            return getattr(self, key)
+        except AttributeError as exc:
+            raise KeyError(key) from exc
+
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
+
+    def __contains__(self, key: str) -> bool:
+        return hasattr(self, key)
+
+
+# ---------------------------------------------------------------------------
+# Settings parsing
+# ---------------------------------------------------------------------------
+
+def setting_description(path: Path) -> str:
     try:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             if line.lower().startswith("description"):
@@ -145,8 +195,8 @@ def setting_description(path):
     return ""
 
 
-def parse_settings(path):
-    values = {}
+def parse_settings(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
     try:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
@@ -159,8 +209,10 @@ def parse_settings(path):
     return values
 
 
-def merged_settings_values(base_setting, custom_values):
-    values = dict(parse_settings(base_setting["path"]))
+def merged_settings_values(
+    base_setting: SettingProfile, custom_values: dict[str, str]
+) -> dict[str, str]:
+    values = dict(parse_settings(base_setting.path))
     for key, value in custom_values.items():
         value = str(value).strip()
         if value:
@@ -168,9 +220,16 @@ def merged_settings_values(base_setting, custom_values):
     return values
 
 
-def _settings_paths():
-    seen = set()
-    for source, folder in (("bundled", BUNDLED_SETTINGS_DIR), ("user", USER_SETTINGS_DIR)):
+# ---------------------------------------------------------------------------
+# Profile discovery
+# ---------------------------------------------------------------------------
+
+def _settings_paths() -> Iterable[tuple[str, Path]]:
+    seen: set[str] = set()
+    for source, folder in (
+        ("bundled", BUNDLED_SETTINGS_DIR),
+        ("user", USER_SETTINGS_DIR),
+    ):
         if not folder.exists():
             continue
         for path in sorted(folder.glob("*.ini")):
@@ -186,25 +245,29 @@ def _settings_paths():
             yield source, path
 
 
-def load_settings():
-    profiles = []
+def load_settings() -> list[SettingProfile]:
+    profiles: list[SettingProfile] = []
     for index, (source, path) in enumerate(_settings_paths(), start=1):
         name = re.sub(r"^[a-z0-9]+[.)]\s*", "", path.stem, flags=re.IGNORECASE)
         name = name.replace(" - ", " / ")
         if source == "user":
             name = f"User / {name}"
-        profiles.append({
-            "index": index,
-            "source": source,
-            "path": path,
-            "label": f"{index}. {name}",
-            "description": setting_description(path),
-            "values": parse_settings(path),
-        })
+        profiles.append(
+            SettingProfile(
+                index=index,
+                source=source,
+                path=path,
+                label=f"{index}. {name}",
+                description=setting_description(path),
+                values=parse_settings(path),
+            )
+        )
     return profiles
 
 
-def write_custom_settings(base_setting, custom_values):
+def write_custom_settings(
+    base_setting: SettingProfile, custom_values: dict[str, str]
+) -> SettingProfile:
     values = merged_settings_values(base_setting, custom_values)
     CUSTOM_SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
     path = CUSTOM_SETTINGS_DIR / "custom.ini"
@@ -213,15 +276,22 @@ def write_custom_settings(base_setting, custom_values):
         if key in values:
             lines.append(f"{key} = {values[key]}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    setting = dict(base_setting)
-    setting["path"] = path
-    setting["label"] = "Custom"
-    setting["description"] = "Custom UI settings"
-    setting["values"] = values
-    return setting
+    return SettingProfile(
+        index=base_setting.index,
+        source="custom",
+        path=path,
+        label="Custom",
+        description="Custom UI settings",
+        values=values,
+    )
 
 
-def write_user_settings_preset(base_setting, custom_values, output_path, description="User custom settings"):
+def write_user_settings_preset(
+    base_setting: SettingProfile,
+    custom_values: dict[str, str],
+    output_path: str | Path,
+    description: str = "User custom settings",
+) -> Path:
     values = merged_settings_values(base_setting, custom_values)
     USER_SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
     path = Path(output_path)
@@ -235,45 +305,55 @@ def write_user_settings_preset(base_setting, custom_values, output_path, descrip
     return path
 
 
-def _get_preprocess_mode(values):
+# ---------------------------------------------------------------------------
+# Preprocessing
+# ---------------------------------------------------------------------------
+
+def _get_preprocess_mode(values: dict[str, str] | None) -> str | None:
     if not values:
         return None
-    preprocess_mode = str(values.get("preprocessMode", "")).strip().lower()
-    if preprocess_mode == "none" or not preprocess_mode:
+    mode = str(values.get("preprocessMode", "")).strip().lower()
+    if mode == "none" or not mode:
         return None
-    return preprocess_mode
+    return mode
 
 
-def _preprocessed_image_path(image_path, mode):
-    image_path = Path(image_path)
+def _preprocessed_image_path(image_path: Path, mode: str) -> Path:
     return image_path.with_name(f"{image_path.stem}.{mode}{image_path.suffix}")
 
 
-def preprocess_input_image(image_path, setting):
+def preprocess_input_image(
+    image_path: str | Path, setting: SettingProfile
+) -> Path:
     image_path = Path(image_path)
-    mode = _get_preprocess_mode(setting.get("values", {}))
+    mode = _get_preprocess_mode(setting.values)
     if mode is None:
         return image_path
 
-    # Generate output path
     output_path = _preprocessed_image_path(image_path, mode)
     try:
-        if output_path.exists() and output_path.stat().st_mtime >= image_path.stat().st_mtime:
+        if (
+            output_path.exists()
+            and output_path.stat().st_mtime >= image_path.stat().st_mtime
+        ):
             return output_path
     except OSError:
         pass
-    
-    # Generate preprocessed image
+
     if mode == "luma_band":
+        # Delayed import to avoid circular deps at module load time.
         luma_band = __import__("preprocess.luma", fromlist=["luma_band"]).luma_band
         return luma_band(image_path)
-    else:
-        raise ValueError(f"unsupported preprocess mode: {mode}")
+    raise PreprocessError(f"unsupported preprocess mode: {mode}")
 
 
-def generated_jsons(image_path):
+# ---------------------------------------------------------------------------
+# Output discovery
+# ---------------------------------------------------------------------------
+
+def generated_jsons(image_path: str | Path) -> list[Path]:
     image_path = Path(image_path)
-    candidates = []
+    candidates: list[Path] = []
     output_base = generator_output_base(image_path)
     folders = {
         image_path.parent / image_path.stem,
@@ -294,15 +374,15 @@ def generated_jsons(image_path):
         candidates.extend(image_path.parent.glob(pattern))
         if output_base.parent != image_path.parent:
             candidates.extend(output_base.parent.glob(pattern))
-    return sorted(set(candidates), key=lambda path: path.stat().st_mtime, reverse=True)
+    return sorted(set(candidates), key=lambda p: p.stat().st_mtime, reverse=True)
 
 
-def geometry_shape_count(path):
+def geometry_shape_count(path: str | Path) -> int:
     return drawable_shape_count(path)
 
 
-def best_geometry_jsons(paths):
-    best_by_stem = {}
+def best_geometry_jsons(paths: Iterable[str | Path]) -> list[Path]:
+    best_by_stem: dict[str, tuple[tuple[int, float], Path]] = {}
     for path in paths:
         path = Path(path)
         base_name = re.sub(r"\.\d+$", "", path.stem)
@@ -311,47 +391,58 @@ def best_geometry_jsons(paths):
         current = best_by_stem.get(key)
         if current is None or score > current[0]:
             best_by_stem[key] = (score, path)
-    return [item[1] for item in sorted(best_by_stem.values(), key=lambda item: item[1].stat().st_mtime, reverse=True)]
+    return [
+        item[1]
+        for item in sorted(
+            best_by_stem.values(), key=lambda item: item[1].stat().st_mtime, reverse=True
+        )
+    ]
 
 
-def generator_preview_path(image_path):
+# ---------------------------------------------------------------------------
+# Preview / output helpers
+# ---------------------------------------------------------------------------
+
+def generator_preview_path(image_path: str | Path) -> Path:
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
     image_path = Path(image_path)
-    name_without_suffix = _name_without_suffix(image_path)
-    return PREVIEW_DIR / f"{name_without_suffix}.preview.png"
+    return PREVIEW_DIR / f"{_name_without_suffix(image_path)}.preview.png"
 
 
-def generated_preview_files(image_path):
+def generated_preview_files(image_path: str | Path) -> list[Path]:
     image_path = Path(image_path)
     if not PREVIEW_DIR.exists():
         return []
-    # Match previews using full filename
-    name_without_suffix = _name_without_suffix(image_path)
+    stem = _name_without_suffix(image_path)
     return sorted(
-        PREVIEW_DIR.glob(f"{name_without_suffix}.preview*.png"),
-        key=lambda path: path.stat().st_mtime,
+        PREVIEW_DIR.glob(f"{stem}.preview*.png"),
+        key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
 
 
-def generator_output_base(image_path):
+def generator_output_base(image_path: str | Path) -> Path:
     image_path = Path(image_path)
-    name_without_suffix = _name_without_suffix(image_path)
-    return image_path.with_name(name_without_suffix)
+    return image_path.with_name(_name_without_suffix(image_path))
 
 
-def _name_without_suffix(path):
-    path = Path(path)
-    return path.name[:-len(path.suffix)] if path.suffix else path.name
+def _name_without_suffix(path: Path) -> str:
+    return path.stem
 
 
-def build_generator_command(image_path, setting):
+# ---------------------------------------------------------------------------
+# Command builder
+# ---------------------------------------------------------------------------
+
+def build_generator_command(
+    image_path: str | Path, setting: SettingProfile
+) -> list[str]:
     image_path = Path(image_path)
     return [
         str(GENERATOR_EXE),
         str(image_path),
         "-settings",
-        str(setting["path"]),
+        str(setting.path),
         "-output",
         str(generator_output_base(image_path)),
         "-preview",

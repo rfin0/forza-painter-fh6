@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import argparse
-import importlib
 import io
 import json
 import math
@@ -22,42 +23,33 @@ from tkinter import BOTH, END, LEFT, RIGHT, X, Button, Canvas, Checkbutton, Entr
 
 import psutil
 
-from app_paths import ROOT, SOURCE_DIR
+from app_paths import ROOT
 from game_profiles import PROFILES
 from geometry_json import RECTANGLE, ROTATED_ELLIPSE, load_normalized_geometry
 from generator_backend import GENERATOR_EXE, GENERATOR_JSON_SCAN_SECONDS, GENERATOR_POLL_SLEEP_SECONDS, GENERATOR_PREVIEW_SCAN_SECONDS, USER_SETTINGS_DIR, best_geometry_jsons, build_generator_command, build_generator_env, generated_jsons, generated_preview_files, generator_preview_path, load_settings, preprocess_input_image, write_custom_settings, write_user_settings_preset
 from version import APP_DISPLAY_NAME, __version__, app_title
 
 
-APP_DIR = SOURCE_DIR
-PROBE_DIR = ROOT / "webui-data" / "probes"
-SESSION_PATH = PROBE_DIR / "current-fh6-session.json"
-MEMORY_SNAPSHOT_LIMIT_MB = 2048
-PREVIEW_MAX = 520
-DETAILED_LOG_OUTPUT_LIMIT = 50000
-DETAILED_LOG_MEMORY_LIMIT = 120000
-FH6_AUTO_LOCATE_MAX_SECONDS = 300
-FH6_AUTO_LOCATE_TIMEOUT_SECONDS = 360
-UPDATE_VERSION_URL = "https://raw.githubusercontent.com/bvzrays/forza-painter-fh6/main/src/version.py"
-UPDATE_CHANGELOG_URL = "https://raw.githubusercontent.com/bvzrays/forza-painter-fh6/main/CHANGELOG.md"
-UPDATE_RELEASE_URL = "https://github.com/bvzrays/forza-painter-fh6/releases/latest"
-UPDATE_CHECK_TIMEOUT_SECONDS = 8
-COLOR_BG = "#0d1117"
-COLOR_PANEL = "#151b23"
-COLOR_PANEL_ALT = "#1c2430"
-COLOR_INPUT = "#0b1017"
-COLOR_TEXT = "#e6edf3"
-COLOR_MUTED = "#9aa7b4"
-COLOR_ACCENT = "#58a6ff"
-COLOR_ACCENT_DARK = "#1f6feb"
-COLOR_WARN = "#f2cc60"
-COLOR_BORDER = "#303d4f"
-COLOR_BUTTON = "#263241"
-COLOR_BUTTON_ACTIVE = "#334456"
-_CV2_CACHE = None
-_CV2_ERROR = None
-_PIL_CACHE = None
-_PIL_ERROR = None
+from app_config import (
+    APP_DIR,
+    PROBE_DIR,
+    SESSION_PATH,
+    MEMORY_SNAPSHOT_LIMIT_MB,
+    PREVIEW_MAX,
+    DETAILED_LOG_OUTPUT_LIMIT,
+    DETAILED_LOG_MEMORY_LIMIT,
+    FH6_AUTO_LOCATE_MAX_SECONDS,
+    FH6_AUTO_LOCATE_TIMEOUT_SECONDS,
+    UPDATE_VERSION_URL,
+    UPDATE_CHANGELOG_URL,
+    UPDATE_RELEASE_URL,
+    UPDATE_CHECK_TIMEOUT_SECONDS,
+    Theme,
+)
+
+from utils import load_cv2, load_pillow
+
+from i18n import tr
 
 LANGUAGES = {
     "English": "en",
@@ -66,415 +58,13 @@ LANGUAGES = {
 }
 
 
-TEXT = {
-    "en": {
-        "title": app_title(),
-        "subtitle": "Generate geometry JSON and import it into Forza Horizon vinyl editor.",
-        "language": "Language",
-        "process": "Game process",
-        "refresh": "Refresh",
-        "generate_tab": "Generate JSON",
-        "import_tab": "Import",
-        "tools_tab": "FH6 Tools",
-        "tutorial_tab": "Tutorial",
-        "images": "Images",
-        "add_images": "Add images",
-        "remove_image": "Remove selected image",
-        "quality": "Quality profile",
-        "import_preset": "Import preset",
-        "open_preset_folder": "Open preset folder",
-        "custom_settings": "Use custom settings",
-        "custom_layers": "Output layers",
-        "custom_resolution": "Max resolution",
-        "custom_random": "Random samples",
-        "custom_mutated": "Mutated samples",
-        "custom_save_at": "Save checkpoints",
-        "preprocess_mode": "Preprocess mode",
-        "save_custom_preset": "Save as preset",
-        "custom_panel_title": "Custom settings",
-        "custom_panel_hint": "The selected preset fills these values. Enable custom settings if you want to edit them before generating.",
-        "generate_step_image": "Step 1 - Choose images",
-        "generate_step_image_hint": "Add PNG/JPG/BMP images. Generated JSON is saved beside each source image.",
-        "generate_step_quality": "Step 2 - Choose quality",
-        "generate_step_quality_hint": "Fast profiles are quicker. Slow profiles use more GPU time and usually look cleaner.",
-        "generate_step_run": "Step 3 - Generate",
-        "generate_step_run_hint": "Click once and wait. Progress appears in Logs; generated JSON is added to the Import page automatically.",
-        "scroll_hint": "Add image, choose a preset, then adjust custom settings if needed.",
-        "start_generate": "Generate with current settings",
-        "stop_generate": "Stop current generation",
-        "open_output": "Open output folder",
-        "preview": "Preview",
-        "preview_hint": "Select an image or JSON to preview it here.",
-        "preview_unavailable": "Preview is unavailable. Install optional preview dependencies, or continue without preview.",
-        "logs": "Logs",
-        "export_logs": "Export detailed log",
-        "progress": "Progress",
-        "json_files": "Geometry JSON files",
-        "add_json": "Add JSON",
-        "remove_json": "Remove selected JSON",
-        "use_outputs": "Use generated JSON",
-        "step_game": "Step 1 - Game",
-        "step_game_hint": "Start FH6, open Vinyl Group Editor, load an ungrouped sphere template, then refresh the process list.",
-        "step_template": "Step 2 - Template",
-        "step_template_hint": "Enter the exact layer count shown by your current in-game template.",
-        "step_json": "Step 3 - JSON",
-        "step_json_hint": "Use the JSON generated by this app, or add a geometry JSON manually.",
-        "step_import": "Step 4 - Import",
-        "step_import_hint": "Click import once. The app will find the FH6 layer table safely, then write the design.",
-        "advanced_options": "Advanced options",
-        "show_advanced": "Show advanced",
-        "hide_advanced": "Hide advanced",
-        "import_preview": "Selected JSON preview",
-        "game_profile": "Game profile",
-        "pid": "PID",
-        "layer_count": "Template layer count",
-        "easy_import": "Easy import",
-        "easy_import_hint": "For FH6, leave addresses empty. The app will reuse a live session or auto-locate before import.",
-        "manual_count": "Layer count address",
-        "manual_table": "Layer table address",
-        "auto_locate": "Auto-locate FH6",
-        "import_json": "Import JSON",
-        "diagnose": "Diagnose",
-        "save_snapshot": "Save count snapshot",
-        "compare_snapshot": "Compare snapshot",
-        "snapshot_count": "Snapshot layer count",
-        "current_count": "Current layer count",
-        "inspect_table": "Inspect table",
-        "table_address": "Candidate table",
-        "admin_note": "Import needs administrator permission. Start this app as administrator if OpenProcess fails.",
-        "no_game": "No supported game process detected",
-        "ready": "Ready",
-        "running": "Running",
-        "done": "Done",
-        "failed": "Failed",
-        "stopped": "Stopped",
-        "no_generation_running": "No generation is running.",
-        "stopping_generation": "Stopping current generation...",
-        "generation_stopped": "Generation stopped.",
-        "generator_recycled_layers": "Generator recycled fully covered layers after {max_layer}/{total}; continuing. This is normal and is not a full restart.",
-        "existing_checkpoints_found": "Found existing checkpoint JSON for {image}: {count} file(s). Added the best one to Import.",
-        "checkpoint_available_after_failure": "Saved checkpoint is available despite the failed/stopped run: {path}",
-        "imported_presets": "Imported {count} preset file(s).",
-        "saved_preset": "Saved preset: {path}",
-        "no_image_selected": "No image is selected.",
-        "no_json_selected": "No JSON is selected.",
-        "cannot_resume_checkpoint": "Existing checkpoints can be reused/imported, but this GPU generator does not support true resume-from-checkpoint yet.",
-        "locating": "Finding current FH6 template...",
-        "locating_wait": "This can take up to 5 minutes. Keep FH6 in the Vinyl Group Editor, do not switch menus, and wait patiently.",
-        "located": "FH6 template located and verified.",
-        "importing": "Importing JSON into FH6...",
-        "json_too_small": "Selected JSON has far fewer drawable layers than the usable template capacity. Import will look blurry; choose a higher-layer JSON.",
-        "json_needs_more_template_layers": "FH needs 4 boundary layers for correct cover/apply behavior. Use a template with at least JSON drawable layers + 4.",
-        "safe_stop": "Stopped before writing because no safe FH6 template was found.",
-        "update_available_title": "Update available",
-        "update_available_message": "A new version is available.\n\nCurrent: v{current}\nLatest: v{latest}",
-        "update_open_page": "Open update page",
-        "update_later": "Later",
-        "update_check_failed_title": "Update check failed",
-        "update_check_failed_message": "Could not check for updates. You can keep using the app.\n\n{error}",
-        "update_current": "Already on the latest version.",
-        "changelog": "Changelog",
-        "runtime_folder": "Runtime/cache folder",
-        "open_runtime_folder": "Open runtime folder",
-        "runtime_location": "Runtime/cache files are stored beside the app: {runtime}. FH6 probe cache: {probe}.",
-        "tutorial": """Beginner workflow
-
-1. Download the one-file EXE from GitHub Releases and run it directly. Normal users do not need Python, .venv, or batch files.
-
-2. Start Forza Horizon 6 and enter Create Vinyl Group / Vinyl Group Editor.
-
-3. Load or create a template made of many simple sphere layers. 500 or more layers is recommended. Ungroup the template before importing.
-
-4. In this app, open Generate JSON, add a PNG/JPG/BMP image, choose a quality profile, then click Start generating.
-
-5. Open Import. Add the generated JSON or click Use generated JSON. Keep Game profile as Forza Horizon 6.
-
-6. Enter the real template layer count currently loaded in-game. For FH6 you normally do not need to type memory addresses. Click Import JSON; the app will auto-locate the live FH6 layer table if needed.
-
-7. If import fails with OpenProcess or permission errors, close the app and run the EXE as administrator. If the game was restarted, entered another menu, or reloaded the template, import again with the correct layer count.
-
-Notes
-
-- JSON generation uses the bundled GPU/OpenCL generator, so keep the graphics driver updated.
-- Current FH6 addresses are valid only for the current game process and editor state.
-- If the app cannot find a safe template, confirm the editor is open, the template is ungrouped, and the layer count is exact.
-""",
-    },
-    "zh": {
-        "title": app_title(),
-        "subtitle": "生成 geometry JSON，并导入到 Forza Horizon 的 Vinyl Group 编辑器。",
-        "language": "语言",
-        "process": "游戏进程",
-        "refresh": "刷新",
-        "generate_tab": "生成 JSON",
-        "import_tab": "导入",
-        "tools_tab": "FH6 工具",
-        "tutorial_tab": "教程",
-        "images": "图片",
-        "add_images": "添加图片",
-        "remove_image": "移除选中图片",
-        "quality": "品质配置",
-        "import_preset": "导入预设",
-        "open_preset_folder": "打开预设目录",
-        "custom_settings": "使用自定义参数",
-        "custom_layers": "输出层数",
-        "custom_resolution": "最大分辨率",
-        "custom_random": "随机样本",
-        "custom_mutated": "变异样本",
-        "custom_save_at": "保存节点",
-        "preprocess_mode": "预处理模式",
-        "save_custom_preset": "保存为预设",
-        "custom_panel_title": "自定义参数",
-        "custom_panel_hint": "上方预设会自动填入这些参数；勾选使用自定义参数后可直接修改。",
-        "generate_step_image": "第 1 步 - 选择图片",
-        "generate_step_image_hint": "添加 PNG/JPG/BMP 图片。生成的 JSON 会保存在原图片旁边。",
-        "generate_step_quality": "第 2 步 - 选择品质",
-        "generate_step_quality_hint": "快速配置耗时短；慢速配置会占用更多 GPU 时间，通常画面更干净。",
-        "generate_step_run": "第 3 步 - 开始生成",
-        "generate_step_run_hint": "点击一次后等待。进度会显示在日志里，生成的 JSON 会自动加入导入页面。",
-        "scroll_hint": "添加图片、选择预设；需要时直接修改下方自定义参数。",
-        "start_generate": "按当前配置生成",
-        "stop_generate": "中断当前生成",
-        "open_output": "打开输出目录",
-        "preview": "预览",
-        "preview_hint": "选择图片或 JSON 后会在这里预览。",
-        "preview_unavailable": "当前环境无法显示预览。可安装可选预览依赖，也可以直接继续生成或导入。",
-        "logs": "日志",
-        "export_logs": "导出详细日志",
-        "progress": "进度",
-        "json_files": "Geometry JSON 文件",
-        "add_json": "添加 JSON",
-        "remove_json": "移除选中 JSON",
-        "use_outputs": "使用已生成 JSON",
-        "step_game": "第 1 步 - 游戏",
-        "step_game_hint": "启动 FH6，进入 Vinyl Group Editor，载入未分组的球形模板，然后刷新进程列表。",
-        "step_template": "第 2 步 - 模板",
-        "step_template_hint": "填写游戏里当前模板显示的真实层数。",
-        "step_json": "第 3 步 - JSON",
-        "step_json_hint": "使用本软件生成的 JSON，或手动添加 geometry JSON。",
-        "step_import": "第 4 步 - 导入",
-        "step_import_hint": "只点一次导入。软件会安全定位 FH6 图层表，然后写入图案。",
-        "advanced_options": "高级选项",
-        "show_advanced": "显示高级",
-        "hide_advanced": "隐藏高级",
-        "import_preview": "已选 JSON 预览",
-        "game_profile": "游戏 profile",
-        "pid": "PID",
-        "layer_count": "模板层数",
-        "easy_import": "简化导入",
-        "easy_import_hint": "FH6 通常不需要手填地址。留空即可复用当前 session，或在导入前自动定位。",
-        "manual_count": "层数地址",
-        "manual_table": "图层表地址",
-        "auto_locate": "自动定位 FH6",
-        "import_json": "导入 JSON",
-        "diagnose": "诊断",
-        "save_snapshot": "保存层数快照",
-        "compare_snapshot": "对比快照",
-        "snapshot_count": "快照层数",
-        "current_count": "当前层数",
-        "inspect_table": "精查 table",
-        "table_address": "候选 table",
-        "admin_note": "导入需要管理员权限。如果日志出现 OpenProcess 失败，请用管理员身份启动本程序。",
-        "no_game": "未检测到支持的游戏进程",
-        "ready": "就绪",
-        "running": "运行中",
-        "done": "完成",
-        "failed": "失败",
-        "stopped": "已中断",
-        "no_generation_running": "当前没有正在生成的任务。",
-        "stopping_generation": "正在中断当前生成...",
-        "generation_stopped": "生成已中断。",
-        "generator_recycled_layers": "生成器在 {max_layer}/{total} 后回收了被完全遮挡的旧图层，正在继续。这是正常回收，不是重新开始。",
-        "existing_checkpoints_found": "发现 {image} 已有 checkpoint JSON：{count} 个，已把最合适的一个加入导入列表。",
-        "checkpoint_available_after_failure": "虽然本次生成失败/中断，但已有 checkpoint 可用：{path}",
-        "imported_presets": "已导入 {count} 个预设文件。",
-        "saved_preset": "已保存预设：{path}",
-        "no_image_selected": "没有选中图片。",
-        "no_json_selected": "没有选中 JSON。",
-        "cannot_resume_checkpoint": "已有 checkpoint 可以复用/导入，但当前 GPU 生成器还不支持真正从 checkpoint 继续生成。",
-        "locating": "正在查找当前 FH6 模板...",
-        "locating_wait": "这一步最长可能需要 5 分钟。请保持 FH6 停留在 Vinyl Group Editor，不要切换菜单，耐心等待。",
-        "located": "已安全定位并验证 FH6 模板。",
-        "importing": "正在导入 JSON 到 FH6...",
-        "json_too_small": "当前 JSON 可绘制层数远少于模板可用容量，导入会很糊；请换用更高层数的 JSON。",
-        "json_needs_more_template_layers": "FH 需要预留 4 个边界层，才能正常保存封面和贴到车上。模板层数建议至少为 JSON 可绘制层数 + 4。",
-        "safe_stop": "未找到安全 FH6 模板，已在写入前停止。",
-        "update_available_title": "发现新版本",
-        "update_available_message": "检测到新版本。\n\n当前版本：v{current}\n最新版本：v{latest}",
-        "update_open_page": "打开更新页面",
-        "update_later": "稍后再说",
-        "update_check_failed_title": "更新检查失败",
-        "update_check_failed_message": "无法检查更新。你可以继续使用当前版本。\n\n{error}",
-        "update_current": "当前已经是最新版本。",
-        "changelog": "更新内容",
-        "runtime_folder": "运行/缓存目录",
-        "open_runtime_folder": "打开运行缓存目录",
-        "runtime_location": "运行缓存文件会保存在软件旁边：{runtime}。FH6 定位缓存：{probe}。",
-        "tutorial": """小白流程
-
-1. 从 GitHub Releases 下载单文件 EXE，直接运行。普通用户不需要 Python、.venv 或 bat 文件。
-
-2. 启动 Forza Horizon 6，进入 Create Vinyl Group / Vinyl Group Editor。
-
-3. 载入或新建一个由大量 sphere 图层组成的模板。建议 500 层以上。导入前必须先 ungroup。
-
-4. 在本软件的“生成 JSON”页添加 PNG/JPG/BMP 图片，选择品质配置，点击“开始生成”。
-
-5. 打开“导入”页，添加生成的 JSON，或点击“使用已生成 JSON”。游戏 profile 保持 Forza Horizon 6。
-
-6. 填写游戏里当前模板的真实层数。FH6 通常不需要手动填写内存地址。点击“导入 JSON”，软件会在需要时自动定位当前 FH6 图层表。
-
-7. 如果日志提示 OpenProcess 或权限失败，请关闭软件，用管理员身份重新运行 EXE。如果重启过游戏、切换过菜单或重新加载模板，请用正确层数重新导入。
-
-说明
-
-- JSON 生成使用自带的 GPU/OpenCL 生成器，请保持显卡驱动正常。
-- FH6 地址只对当前游戏进程和当前编辑器状态有效。
-- 如果软件找不到安全模板，请确认编辑器仍然打开、模板已经 ungroup、层数填写完全正确。
-""",
-    },
-    "ko": {
-        "title": app_title(),
-        "subtitle": "geometry JSON을 생성하고 Forza Horizon 비닐 그룹 편집기로 가져옵니다.",
-        "language": "언어",
-        "process": "게임 프로세스",
-        "refresh": "새로고침",
-        "generate_tab": "JSON 생성",
-        "import_tab": "가져오기",
-        "tools_tab": "FH6 도구",
-        "tutorial_tab": "튜토리얼",
-        "images": "이미지",
-        "add_images": "이미지 추가",
-        "remove_image": "선택한 이미지 제거",
-        "quality": "품질 프로필",
-        "import_preset": "프리셋 가져오기",
-        "open_preset_folder": "프리셋 폴더 열기",
-        "custom_settings": "사용자 설정 사용",
-        "custom_layers": "출력 레이어",
-        "custom_resolution": "최대 해상도",
-        "custom_random": "무작위 샘플",
-        "custom_mutated": "변형 샘플",
-        "custom_save_at": "체크포인트 저장",
-        "preprocess_mode": "전처리 모드",
-        "save_custom_preset": "프리셋으로 저장",
-        "custom_panel_title": "사용자 설정",
-        "custom_panel_hint": "선택한 프리셋 값이 자동으로 채워집니다. 생성 전에 값을 바꾸려면 사용자 설정을 켜세요.",
-        "generate_step_image": "1단계 - 이미지 선택",
-        "generate_step_image_hint": "PNG/JPG/BMP 이미지를 추가하세요. 생성된 JSON은 원본 이미지 옆에 저장됩니다.",
-        "generate_step_quality": "2단계 - 품질 선택",
-        "generate_step_quality_hint": "빠른 프로필은 시간이 적게 걸립니다. 느린 프로필은 GPU 시간을 더 쓰지만 보통 더 깔끔합니다.",
-        "generate_step_run": "3단계 - 생성",
-        "generate_step_run_hint": "한 번 클릭한 뒤 기다리세요. 진행 상황은 로그에 표시되고, 생성된 JSON은 가져오기 페이지에 자동으로 추가됩니다.",
-        "scroll_hint": "이미지를 추가하고 프리셋을 선택한 뒤, 필요하면 사용자 설정을 조정하세요.",
-        "start_generate": "현재 설정으로 생성",
-        "stop_generate": "현재 생성 중지",
-        "open_output": "출력 폴더 열기",
-        "preview": "미리보기",
-        "preview_hint": "이미지나 JSON을 선택하면 여기에 미리보기가 표시됩니다.",
-        "preview_unavailable": "미리보기를 사용할 수 없습니다. 선택 미리보기 의존성을 설치하거나, 미리보기 없이 계속 진행하세요.",
-        "logs": "로그",
-        "export_logs": "자세한 로그 내보내기",
-        "progress": "진행 상황",
-        "json_files": "Geometry JSON 파일",
-        "add_json": "JSON 추가",
-        "remove_json": "선택한 JSON 제거",
-        "use_outputs": "생성된 JSON 사용",
-        "step_game": "1단계 - 게임",
-        "step_game_hint": "FH6를 실행하고 비닐 그룹 편집기를 연 뒤, 그룹 해제된 구체 템플릿을 불러오고 프로세스 목록을 새로고침하세요.",
-        "step_template": "2단계 - 템플릿",
-        "step_template_hint": "현재 게임 안 템플릿에 표시된 정확한 레이어 수를 입력하세요.",
-        "step_json": "3단계 - JSON",
-        "step_json_hint": "이 앱에서 생성한 JSON을 사용하거나 geometry JSON을 직접 추가하세요.",
-        "step_import": "4단계 - 가져오기",
-        "step_import_hint": "가져오기를 한 번만 클릭하세요. 앱이 FH6 레이어 테이블을 안전하게 찾은 뒤 디자인을 씁니다.",
-        "advanced_options": "고급 옵션",
-        "show_advanced": "고급 옵션 표시",
-        "hide_advanced": "고급 옵션 숨기기",
-        "import_preview": "선택한 JSON 미리보기",
-        "game_profile": "게임 프로필",
-        "pid": "PID",
-        "layer_count": "템플릿 레이어 수",
-        "easy_import": "간편 가져오기",
-        "easy_import_hint": "FH6에서는 주소를 비워두세요. 앱이 현재 세션을 재사용하거나 가져오기 전에 자동으로 찾습니다.",
-        "manual_count": "레이어 수 주소",
-        "manual_table": "레이어 테이블 주소",
-        "auto_locate": "FH6 자동 찾기",
-        "import_json": "JSON 가져오기",
-        "diagnose": "진단",
-        "save_snapshot": "레이어 수 스냅샷 저장",
-        "compare_snapshot": "스냅샷 비교",
-        "snapshot_count": "스냅샷 레이어 수",
-        "current_count": "현재 레이어 수",
-        "inspect_table": "테이블 검사",
-        "table_address": "후보 테이블",
-        "admin_note": "가져오기는 관리자 권한이 필요합니다. OpenProcess 실패가 보이면 이 앱을 관리자 권한으로 실행하세요.",
-        "no_game": "지원되는 게임 프로세스를 찾지 못했습니다",
-        "ready": "준비됨",
-        "running": "실행 중",
-        "done": "완료",
-        "failed": "실패",
-        "stopped": "중지됨",
-        "no_generation_running": "현재 실행 중인 생성 작업이 없습니다.",
-        "stopping_generation": "현재 생성을 중지하는 중...",
-        "generation_stopped": "생성이 중지되었습니다.",
-        "generator_recycled_layers": "생성기가 {max_layer}/{total} 이후 완전히 가려진 이전 레이어를 재활용했습니다. 정상 동작이며 처음부터 다시 시작한 것이 아닙니다.",
-        "existing_checkpoints_found": "{image}의 기존 checkpoint JSON {count}개를 찾았습니다. 가장 적합한 파일을 가져오기 목록에 추가했습니다.",
-        "checkpoint_available_after_failure": "이번 생성이 실패/중지되었지만 저장된 checkpoint를 사용할 수 있습니다: {path}",
-        "imported_presets": "{count}개 프리셋 파일을 가져왔습니다.",
-        "saved_preset": "프리셋을 저장했습니다: {path}",
-        "no_image_selected": "선택한 이미지가 없습니다.",
-        "no_json_selected": "선택한 JSON이 없습니다.",
-        "cannot_resume_checkpoint": "기존 checkpoint는 재사용/가져오기할 수 있지만 현재 GPU 생성기는 진정한 checkpoint 이어하기를 아직 지원하지 않습니다.",
-        "locating": "현재 FH6 템플릿을 찾는 중...",
-        "locating_wait": "최대 5분 정도 걸릴 수 있습니다. FH6를 Vinyl Group Editor에 그대로 두고 메뉴를 전환하지 말고 기다려 주세요.",
-        "located": "FH6 템플릿을 찾고 검증했습니다.",
-        "importing": "JSON을 FH6로 가져오는 중...",
-        "json_too_small": "선택한 JSON의 그릴 수 있는 레이어 수가 템플릿 사용 가능 용량보다 훨씬 적습니다. 가져오면 흐릿해 보이므로 더 높은 레이어 JSON을 선택하세요.",
-        "json_needs_more_template_layers": "FH는 커버 저장과 적용 범위를 올바르게 처리하려면 경계 레이어 4개가 필요합니다. JSON의 그릴 수 있는 레이어 수 + 4 이상인 템플릿을 사용하세요.",
-        "safe_stop": "안전한 FH6 템플릿을 찾지 못해 쓰기 전에 중지했습니다.",
-        "update_available_title": "새 버전 사용 가능",
-        "update_available_message": "새 버전이 있습니다.\n\n현재: v{current}\n최신: v{latest}",
-        "update_open_page": "업데이트 페이지 열기",
-        "update_later": "나중에",
-        "update_check_failed_title": "업데이트 확인 실패",
-        "update_check_failed_message": "업데이트를 확인하지 못했습니다. 현재 버전을 계속 사용할 수 있습니다.\n\n{error}",
-        "update_current": "현재 최신 버전입니다.",
-        "changelog": "변경 내역",
-        "runtime_folder": "런타임/캐시 폴더",
-        "open_runtime_folder": "런타임 폴더 열기",
-        "runtime_location": "런타임/캐시 파일은 앱 옆에 저장됩니다: {runtime}. FH6 probe cache: {probe}.",
-        "tutorial": """초보자용 작업 순서
-
-1. GitHub Releases에서 단일 EXE를 다운로드해 바로 실행하세요. 일반 사용자는 Python, .venv, bat 파일이 필요 없습니다.
-
-2. Forza Horizon 6를 실행하고 Create Vinyl Group / Vinyl Group Editor로 들어갑니다.
-
-3. 많은 단순 sphere 레이어로 만든 템플릿을 불러오거나 새로 만드세요. 500개 이상의 레이어를 권장합니다. 가져오기 전에는 반드시 템플릿을 ungroup해야 합니다.
-
-4. 이 앱의 JSON 생성 페이지에서 PNG/JPG/BMP 이미지를 추가하고 품질 프로필을 선택한 뒤 생성을 시작하세요.
-
-5. 가져오기 페이지를 여세요. 생성된 JSON을 추가하거나 생성된 JSON 사용을 클릭하세요. 게임 프로필은 Forza Horizon 6로 둡니다.
-
-6. 현재 게임에 불러온 템플릿의 실제 레이어 수를 입력하세요. FH6에서는 보통 메모리 주소를 직접 입력할 필요가 없습니다. JSON 가져오기를 클릭하면 필요할 때 앱이 현재 FH6 레이어 테이블을 자동으로 찾습니다.
-
-7. OpenProcess 또는 권한 오류가 보이면 앱을 닫고 EXE를 관리자 권한으로 다시 실행하세요. 게임을 다시 시작했거나 메뉴를 바꿨다면 정확한 레이어 수로 다시 가져오세요.
-
-참고
-
-- JSON 생성은 포함된 GPU/OpenCL 생성기를 사용하므로 그래픽 드라이버를 최신 상태로 유지하세요.
-- 현재 FH6 주소는 현재 게임 프로세스와 현재 편집기 상태에서만 유효합니다.
-- 앱이 안전한 템플릿을 찾지 못하면 편집기가 열려 있는지, 템플릿이 ungroup 상태인지, 레이어 수가 정확한지 확인하세요.
-""",
-    },
-}
+# Removed: TEXT dictionary (now in i18n.py)
 
 
 def ensure_dirs():
     PROBE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def tr(lang, key):
-    return TEXT[lang].get(key, TEXT["en"].get(key, key))
 
 
 def version_key(value):
@@ -607,35 +197,7 @@ def session_matches_current_import(session, game, pid, layer_count):
         return False
 
 
-def load_cv2():
-    global _CV2_CACHE, _CV2_ERROR
-    if _CV2_CACHE is not None:
-        return _CV2_CACHE
-    if _CV2_ERROR is not None:
-        return None
-    try:
-        cv2 = importlib.import_module("cv2")
-        np = importlib.import_module("numpy")
-        _CV2_CACHE = (cv2, np)
-        return _CV2_CACHE
-    except BaseException as exc:
-        _CV2_ERROR = exc
-        return None
-
-
-def load_pillow():
-    global _PIL_CACHE, _PIL_ERROR
-    if _PIL_CACHE is not None:
-        return _PIL_CACHE
-    if _PIL_ERROR is not None:
-        return None
-    try:
-        from PIL import Image, ImageDraw
-        _PIL_CACHE = (Image, ImageDraw)
-        return _PIL_CACHE
-    except BaseException as exc:
-        _PIL_ERROR = exc
-        return None
+# load_cv2 and load_pillow are now imported from utils
 
 
 def preview_size_tuple(max_size=None):
@@ -859,7 +421,7 @@ class App:
         self.root.title(app_title())
         self.root.geometry("1420x900")
         self.root.minsize(1180, 780)
-        self.root.configure(bg=COLOR_BG)
+        self.root.configure(bg=Theme.BG)
         self.lang = "en"
         self.queue = queue.Queue()
         self.shutdown_event = threading.Event()
@@ -930,60 +492,60 @@ class App:
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure(".", background=COLOR_BG, foreground=COLOR_TEXT, fieldbackground=COLOR_INPUT)
-        style.configure("TFrame", background=COLOR_BG)
-        style.configure("TNotebook", background=COLOR_BG, borderwidth=0)
-        style.configure("Primary.TNotebook", background=COLOR_BG, borderwidth=0, tabmargins=(0, 0, 0, 0))
+        style.configure(".", background=Theme.BG, foreground=Theme.TEXT, fieldbackground=Theme.INPUT)
+        style.configure("TFrame", background=Theme.BG)
+        style.configure("TNotebook", background=Theme.BG, borderwidth=0)
+        style.configure("Primary.TNotebook", background=Theme.BG, borderwidth=0, tabmargins=(0, 0, 0, 0))
         style.configure(
             "Primary.TNotebook.Tab",
             padding=(18, 8),
             font=("Segoe UI", 10, "bold"),
-            background=COLOR_PANEL_ALT,
-            foreground=COLOR_MUTED,
+            background=Theme.PANEL_ALT,
+            foreground=Theme.MUTED,
             borderwidth=0,
         )
         style.map(
             "Primary.TNotebook.Tab",
-            background=[("selected", COLOR_ACCENT_DARK), ("active", COLOR_PANEL_ALT)],
-            foreground=[("selected", "#ffffff"), ("active", COLOR_TEXT)],
+            background=[("selected", Theme.ACCENT_DARK), ("active", Theme.PANEL_ALT)],
+            foreground=[("selected", "#ffffff"), ("active", Theme.TEXT)],
         )
         style.configure(
             "TLabelframe",
-            background=COLOR_PANEL,
-            foreground=COLOR_TEXT,
-            bordercolor=COLOR_BORDER,
-            lightcolor=COLOR_BORDER,
-            darkcolor=COLOR_BORDER,
+            background=Theme.PANEL,
+            foreground=Theme.TEXT,
+            bordercolor=Theme.BORDER,
+            lightcolor=Theme.BORDER,
+            darkcolor=Theme.BORDER,
         )
         style.configure(
             "TLabelframe.Label",
-            background=COLOR_PANEL,
-            foreground=COLOR_TEXT,
+            background=Theme.PANEL,
+            foreground=Theme.TEXT,
             font=("Segoe UI", 10, "bold"),
         )
         style.configure(
             "TCombobox",
-            fieldbackground=COLOR_INPUT,
-            background=COLOR_PANEL_ALT,
-            foreground=COLOR_TEXT,
-            arrowcolor=COLOR_TEXT,
-            bordercolor=COLOR_BORDER,
-            lightcolor=COLOR_BORDER,
-            darkcolor=COLOR_BORDER,
+            fieldbackground=Theme.INPUT,
+            background=Theme.PANEL_ALT,
+            foreground=Theme.TEXT,
+            arrowcolor=Theme.TEXT,
+            bordercolor=Theme.BORDER,
+            lightcolor=Theme.BORDER,
+            darkcolor=Theme.BORDER,
         )
         style.map(
             "TCombobox",
-            fieldbackground=[("readonly", COLOR_INPUT)],
-            foreground=[("readonly", COLOR_TEXT)],
-            selectbackground=[("readonly", COLOR_ACCENT_DARK)],
+            fieldbackground=[("readonly", Theme.INPUT)],
+            foreground=[("readonly", Theme.TEXT)],
+            selectbackground=[("readonly", Theme.ACCENT_DARK)],
             selectforeground=[("readonly", "#ffffff")],
         )
         style.configure(
             "TScrollbar",
-            background=COLOR_PANEL_ALT,
-            troughcolor=COLOR_BG,
-            bordercolor=COLOR_BORDER,
-            arrowcolor=COLOR_TEXT,
+            background=Theme.PANEL_ALT,
+            troughcolor=Theme.BG,
+            bordercolor=Theme.BORDER,
+            arrowcolor=Theme.TEXT,
         )
 
     def _register_process(self, proc):
@@ -1044,26 +606,26 @@ class App:
         try:
             return parent.cget("bg")
         except Exception:
-            return COLOR_PANEL
+            return Theme.PANEL
 
     def _label(self, parent, key, **kwargs):
         kwargs.setdefault("bg", self._parent_bg(parent))
-        kwargs.setdefault("fg", COLOR_TEXT)
+        kwargs.setdefault("fg", Theme.TEXT)
         widget = Label(parent, text=tr(self.lang, key), **kwargs)
         self.translated.append((widget, key, "text"))
         return widget
 
     def _button(self, parent, key, command, **kwargs):
-        kwargs.setdefault("bg", COLOR_BUTTON)
-        kwargs.setdefault("fg", COLOR_TEXT)
-        kwargs.setdefault("disabledforeground", COLOR_MUTED)
-        kwargs.setdefault("activebackground", COLOR_BUTTON_ACTIVE)
-        kwargs.setdefault("activeforeground", COLOR_TEXT)
+        kwargs.setdefault("bg", Theme.BUTTON)
+        kwargs.setdefault("fg", Theme.TEXT)
+        kwargs.setdefault("disabledforeground", Theme.MUTED)
+        kwargs.setdefault("activebackground", Theme.BUTTON_ACTIVE)
+        kwargs.setdefault("activeforeground", Theme.TEXT)
         kwargs.setdefault("relief", "flat")
         kwargs.setdefault("bd", 0)
         kwargs.setdefault("highlightthickness", 1)
-        kwargs.setdefault("highlightbackground", COLOR_BORDER)
-        kwargs.setdefault("highlightcolor", COLOR_ACCENT)
+        kwargs.setdefault("highlightbackground", Theme.BORDER)
+        kwargs.setdefault("highlightcolor", Theme.ACCENT)
         kwargs.setdefault("padx", 8)
         kwargs.setdefault("pady", 3)
         widget = Button(parent, text=tr(self.lang, key), command=command, **kwargs)
@@ -1073,89 +635,89 @@ class App:
     def _mapped_label_color(self, color):
         value = str(color or "").lower()
         if value in ("black", "#000000", "#000", "systembuttontext", "systemwindowtext"):
-            return COLOR_TEXT
+            return Theme.TEXT
         if value in ("systemdisabledtext", "gray", "grey", "gray40", "grey40"):
-            return COLOR_MUTED
+            return Theme.MUTED
         if value in ("#555", "#555555", "gray50", "grey50"):
-            return COLOR_MUTED
+            return Theme.MUTED
         if value in ("#005a9e", "blue"):
-            return COLOR_ACCENT
+            return Theme.ACCENT
         if value in ("#8a5300", "orange", "darkorange"):
-            return COLOR_WARN
-        return color if color else COLOR_TEXT
+            return Theme.WARN
+        return color if color else Theme.TEXT
 
     def _apply_dark_theme_recursive(self, widget):
         try:
             if isinstance(widget, Frame):
-                bg = COLOR_BG if widget.master is self.root else COLOR_PANEL
+                bg = Theme.BG if widget.master is self.root else Theme.PANEL
                 widget.configure(bg=bg)
             elif isinstance(widget, Label):
                 if widget in (getattr(self, "preview_label", None), getattr(self, "import_preview_label", None)):
-                    widget.configure(bg=COLOR_INPUT, fg=COLOR_TEXT)
+                    widget.configure(bg=Theme.INPUT, fg=Theme.TEXT)
                 elif widget is getattr(self, "update_indicator", None):
-                    widget.configure(bg=COLOR_PANEL)
+                    widget.configure(bg=Theme.PANEL)
                 else:
                     widget.configure(bg=self._parent_bg(widget.master), fg=self._mapped_label_color(widget.cget("fg")))
             elif isinstance(widget, Button):
                 widget.configure(
-                    bg=COLOR_BUTTON,
-                    fg=COLOR_TEXT,
-                    disabledforeground=COLOR_MUTED,
-                    activebackground=COLOR_BUTTON_ACTIVE,
-                    activeforeground=COLOR_TEXT,
+                    bg=Theme.BUTTON,
+                    fg=Theme.TEXT,
+                    disabledforeground=Theme.MUTED,
+                    activebackground=Theme.BUTTON_ACTIVE,
+                    activeforeground=Theme.TEXT,
                     relief="flat",
                     bd=0,
-                    highlightbackground=COLOR_BORDER,
-                    highlightcolor=COLOR_ACCENT,
+                    highlightbackground=Theme.BORDER,
+                    highlightcolor=Theme.ACCENT,
                 )
             elif isinstance(widget, Checkbutton):
                 widget.configure(
                     bg=self._parent_bg(widget.master),
-                    fg=COLOR_TEXT,
-                    disabledforeground=COLOR_MUTED,
+                    fg=Theme.TEXT,
+                    disabledforeground=Theme.MUTED,
                     activebackground=self._parent_bg(widget.master),
-                    activeforeground=COLOR_TEXT,
-                    selectcolor=COLOR_INPUT,
+                    activeforeground=Theme.TEXT,
+                    selectcolor=Theme.INPUT,
                     relief="flat",
-                    highlightbackground=COLOR_BORDER,
-                    highlightcolor=COLOR_ACCENT,
+                    highlightbackground=Theme.BORDER,
+                    highlightcolor=Theme.ACCENT,
                 )
             elif isinstance(widget, Entry):
                 widget.configure(
-                    bg=COLOR_INPUT,
-                    fg=COLOR_TEXT,
-                    insertbackground=COLOR_TEXT,
-                    disabledbackground=COLOR_PANEL_ALT,
-                    disabledforeground=COLOR_MUTED,
-                    readonlybackground=COLOR_INPUT,
+                    bg=Theme.INPUT,
+                    fg=Theme.TEXT,
+                    insertbackground=Theme.TEXT,
+                    disabledbackground=Theme.PANEL_ALT,
+                    disabledforeground=Theme.MUTED,
+                    readonlybackground=Theme.INPUT,
                     relief="flat",
                     highlightthickness=1,
-                    highlightbackground=COLOR_BORDER,
-                    highlightcolor=COLOR_ACCENT,
+                    highlightbackground=Theme.BORDER,
+                    highlightcolor=Theme.ACCENT,
                 )
             elif isinstance(widget, Listbox):
                 widget.configure(
-                    bg=COLOR_INPUT,
-                    fg=COLOR_TEXT,
-                    selectbackground=COLOR_ACCENT_DARK,
+                    bg=Theme.INPUT,
+                    fg=Theme.TEXT,
+                    selectbackground=Theme.ACCENT_DARK,
                     selectforeground="#ffffff",
                     highlightthickness=1,
-                    highlightbackground=COLOR_BORDER,
+                    highlightbackground=Theme.BORDER,
                     relief="flat",
                 )
             elif isinstance(widget, Text):
                 widget.configure(
-                    bg=COLOR_INPUT,
-                    fg=COLOR_TEXT,
-                    insertbackground=COLOR_TEXT,
-                    selectbackground=COLOR_ACCENT_DARK,
+                    bg=Theme.INPUT,
+                    fg=Theme.TEXT,
+                    insertbackground=Theme.TEXT,
+                    selectbackground=Theme.ACCENT_DARK,
                     selectforeground="#ffffff",
                     highlightthickness=1,
-                    highlightbackground=COLOR_BORDER,
+                    highlightbackground=Theme.BORDER,
                     relief="flat",
                 )
             elif isinstance(widget, Canvas):
-                widget.configure(bg=COLOR_PANEL, highlightthickness=0)
+                widget.configure(bg=Theme.PANEL, highlightthickness=0)
         except Exception:
             pass
         for child in widget.winfo_children():
@@ -1168,7 +730,7 @@ class App:
         title_box = Frame(header)
         title_box.pack(side=LEFT, fill=X, expand=True)
         self._label(title_box, "title", font=("Segoe UI", 18, "bold"), anchor="w").pack(fill=X)
-        self._label(title_box, "subtitle", anchor="w", fg=COLOR_MUTED).pack(fill=X)
+        self._label(title_box, "subtitle", anchor="w", fg=Theme.MUTED).pack(fill=X)
         right = Frame(header)
         right.pack(side=RIGHT)
         update_row = Frame(right)
@@ -1177,8 +739,8 @@ class App:
             update_row,
             text="",
             width=2,
-            bg=COLOR_PANEL,
-            fg=COLOR_WARN,
+            bg=Theme.PANEL,
+            fg=Theme.WARN,
             font=("Segoe UI", 11, "bold"),
             cursor="hand2",
         )
@@ -1196,7 +758,7 @@ class App:
         self.process_combo = ttk.Combobox(process_bar, textvariable=self.selected_pid, state="readonly", width=44)
         self.process_combo.pack(side=LEFT, padx=8)
         self._button(process_bar, "refresh", self.refresh_processes).pack(side=LEFT)
-        Label(process_bar, textvariable=self.status, anchor="e", bg=COLOR_BG, fg=COLOR_MUTED).pack(side=RIGHT)
+        Label(process_bar, textvariable=self.status, anchor="e", bg=Theme.BG, fg=Theme.MUTED).pack(side=RIGHT)
 
         self.tabs = ttk.Notebook(self.root, style="Primary.TNotebook")
         self.tabs.pack(fill=BOTH, expand=True, padx=14, pady=(0, 8))
@@ -1764,13 +1326,13 @@ class App:
         else:
             self.queue.put(("update_current", payload))
 
-    def _set_update_indicator(self, text="", color=COLOR_WARN):
+    def _set_update_indicator(self, text="", color=Theme.WARN):
         if hasattr(self, "update_indicator"):
             self.update_indicator.config(text=text, fg=color)
 
     def _handle_update_failed(self, error):
         self.update_state = {"status": "failed", "error": error}
-        self._set_update_indicator("!", COLOR_WARN)
+        self._set_update_indicator("!", Theme.WARN)
         self.log_line(f"Update check failed: {error}")
 
     def _handle_update_current(self, payload):
@@ -1780,7 +1342,7 @@ class App:
 
     def _handle_update_available(self, payload):
         self.update_state = {"status": "available", **payload}
-        self._set_update_indicator("!", COLOR_ACCENT)
+        self._set_update_indicator("!", Theme.ACCENT)
         self.log_line(f"New version available: v{payload.get('latest')} (current v{__version__})")
         self.show_update_dialog(payload)
 
@@ -1807,16 +1369,16 @@ class App:
         dialog = Toplevel(self.root)
         self.update_dialog = dialog
         dialog.title(tr(self.lang, "update_available_title"))
-        dialog.configure(bg=COLOR_BG)
+        dialog.configure(bg=Theme.BG)
         dialog.resizable(True, True)
 
-        body = Frame(dialog, bg=COLOR_BG)
+        body = Frame(dialog, bg=Theme.BG)
         body.pack(fill=BOTH, expand=True, padx=16, pady=14)
         Label(
             body,
             text=tr(self.lang, "update_available_message").format(current=__version__, latest=latest),
-            bg=COLOR_BG,
-            fg=COLOR_TEXT,
+            bg=Theme.BG,
+            fg=Theme.TEXT,
             justify=LEFT,
             anchor="w",
             font=("Segoe UI", 11, "bold"),
@@ -1824,24 +1386,24 @@ class App:
         Label(
             body,
             text=tr(self.lang, "changelog"),
-            bg=COLOR_BG,
-            fg=COLOR_MUTED,
+            bg=Theme.BG,
+            fg=Theme.MUTED,
             anchor="w",
         ).pack(fill=X)
 
-        text_frame = Frame(body, bg=COLOR_BG)
+        text_frame = Frame(body, bg=Theme.BG)
         text_frame.pack(fill=BOTH, expand=True, pady=(4, 12))
         changelog_text = Text(text_frame, width=80, height=18, wrap="word")
         scrollbar = ttk.Scrollbar(text_frame, orient="vertical", command=changelog_text.yview)
         changelog_text.configure(
             yscrollcommand=scrollbar.set,
-            bg=COLOR_INPUT,
-            fg=COLOR_TEXT,
-            insertbackground=COLOR_TEXT,
-            selectbackground=COLOR_ACCENT_DARK,
+            bg=Theme.INPUT,
+            fg=Theme.TEXT,
+            insertbackground=Theme.TEXT,
+            selectbackground=Theme.ACCENT_DARK,
             selectforeground="#ffffff",
             highlightthickness=1,
-            highlightbackground=COLOR_BORDER,
+            highlightbackground=Theme.BORDER,
             relief="flat",
         )
         changelog_text.pack(side=LEFT, fill=BOTH, expand=True)
@@ -1849,7 +1411,7 @@ class App:
         changelog_text.insert(END, changelog)
         changelog_text.config(state="disabled")
 
-        actions = Frame(body, bg=COLOR_BG)
+        actions = Frame(body, bg=Theme.BG)
         actions.pack(fill=X)
 
         def close_update_dialog():
@@ -1864,10 +1426,10 @@ class App:
             actions,
             text=tr(self.lang, "update_later"),
             command=close_update_dialog,
-            bg=COLOR_BUTTON,
-            fg=COLOR_TEXT,
-            activebackground=COLOR_BUTTON_ACTIVE,
-            activeforeground=COLOR_TEXT,
+            bg=Theme.BUTTON,
+            fg=Theme.TEXT,
+            activebackground=Theme.BUTTON_ACTIVE,
+            activeforeground=Theme.TEXT,
             relief="flat",
             bd=0,
             padx=12,
@@ -1877,9 +1439,9 @@ class App:
             actions,
             text=tr(self.lang, "update_open_page"),
             command=open_update_page,
-            bg=COLOR_ACCENT_DARK,
+            bg=Theme.ACCENT_DARK,
             fg="#ffffff",
-            activebackground=COLOR_ACCENT,
+            activebackground=Theme.ACCENT,
             activeforeground="#ffffff",
             relief="flat",
             bd=0,
