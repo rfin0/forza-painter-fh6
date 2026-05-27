@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-  <code>v1.6.6</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>单文件 EXE</code>
+  <code>v1.6.7</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>单文件 EXE</code>
 </p>
 
 把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要 Python、`.venv`、批处理文件，也不需要手动填写内存地址。
 
-> **下载 EXE：** 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.6.6.exe`，直接运行。
+> **下载 EXE：** 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.6.7.exe`，直接运行。
 
 > **画面发糊先看这里：** 优先提高生成页里的 `Random samples / 随机样本`。随机样本数在 **200000 以上** 通常会有明显质变；数值越高越清晰，但生成时间也会明显增加。
 
@@ -36,7 +36,7 @@
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.6.6.exe`。
+1. 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.6.7.exe`。
 2. 把 EXE 放在普通可写目录里，例如 `Desktop\forza-painter-fh6`。
 3. 双击 EXE 启动。导入 FH6 时如果被 Windows 拦截进程访问，请用管理员身份运行 EXE。
 4. 在游戏里进入 `Create Vinyl Group` / `Vinyl Group Editor`，加载球形模板并 `Ungroup`。
@@ -140,6 +140,13 @@ EXE 旁边可能出现这些外部文件夹：
 ## 更新日志
 
 这里仅保留带版本号的发布记录。用于软件更新弹窗的完整记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+### v1.6.7 / 2026-05-27
+
+- 更新软件版本到 `v1.6.7`；发布文件现在使用 `forza-painter-fh6-v1.6.7.exe`。
+- 内置 GPU 生成器更新到上游 `canary-26052702`。
+- 将 FH6 导入缩放里的魔法数字改为圆形和矩形基准尺寸常量，方便后续明确调整游戏内圆形基准大小。
+- 改进生成 ETA 估算，避免生成器批量输出或前期慢速阶段导致剩余时间长期严重不准。
 
 ### v1.6.6 / 2026-05-26
 

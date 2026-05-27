@@ -58,6 +58,12 @@ LANGUAGES = {
     "한국어": "ko",
 }
 
+ETA_MAX_PROGRESS_SAMPLES = 400
+ETA_WINDOW_SECONDS = 45.0
+ETA_MAX_HISTORY_SECONDS = 180.0
+ETA_MIN_WINDOW_SECONDS = 4.0
+ETA_MIN_WINDOW_LAYERS = 25
+
 
 # Removed: TEXT dictionary (now in i18n.py)
 
@@ -431,9 +437,8 @@ class App:
         self.generation_lock = threading.Lock()
         self.generation_running = False
         self.current_generator_proc = None
-        self.eta_intervals = deque(maxlen=24)
-        self.eta_last_layer = None
-        self.eta_last_time = None
+        self.eta_samples = deque(maxlen=ETA_MAX_PROGRESS_SAMPLES)
+        self.eta_display_time = None
         self.eta_smoothed_seconds_per_layer = None
         self.eta_display_remaining = None
         self.eta_max_layer_seen = None
@@ -1456,9 +1461,8 @@ class App:
         dialog.protocol("WM_DELETE_WINDOW", close_update_dialog)
 
     def _reset_generation_eta(self):
-        self.eta_intervals.clear()
-        self.eta_last_layer = None
-        self.eta_last_time = None
+        self.eta_samples.clear()
+        self.eta_display_time = None
         self.eta_smoothed_seconds_per_layer = None
         self.eta_display_remaining = None
         self.eta_max_layer_seen = None
@@ -1489,40 +1493,47 @@ class App:
             return None
         self.eta_max_layer_seen = current
         self.eta_recycle_notice_active = False
-        if self.eta_last_layer is None:
-            self.eta_last_layer = current
-            self.eta_last_time = now
-            return friendly
-        layer_delta = current - self.eta_last_layer
-        elapsed_seconds = now - self.eta_last_time
-        self.eta_last_layer = current
-        self.eta_last_time = now
-        if layer_delta <= 0:
-            return friendly
-        if elapsed_seconds >= 0.05:
-            self.eta_intervals.append(elapsed_seconds / layer_delta)
+        self.eta_samples.append((current, now))
+        while len(self.eta_samples) > 1 and now - self.eta_samples[0][1] > ETA_MAX_HISTORY_SECONDS:
+            self.eta_samples.popleft()
+
         remaining_layers = max(0, total - current)
         if remaining_layers == 0:
             self.eta_display_remaining = 0
+            self.eta_display_time = now
             eta_time = datetime.fromtimestamp(now).strftime("%H:%M:%S")
             return f"{friendly} | ETA {eta_time} ({self._format_remaining_time(0)})"
-        if not self.eta_intervals:
+
+        if len(self.eta_samples) < 2:
             return friendly
-        intervals = sorted(self.eta_intervals)
-        seconds_per_layer = intervals[len(intervals) // 2]
-        if self.eta_smoothed_seconds_per_layer is None:
-            self.eta_smoothed_seconds_per_layer = seconds_per_layer
-        else:
-            self.eta_smoothed_seconds_per_layer = (
-                self.eta_smoothed_seconds_per_layer * 0.75
-                + seconds_per_layer * 0.25
-            )
-        remaining_seconds = self.eta_smoothed_seconds_per_layer * remaining_layers
+
+        start_layer, start_time = self.eta_samples[0]
+        for sample_layer, sample_time in self.eta_samples:
+            if now - sample_time <= ETA_WINDOW_SECONDS:
+                start_layer, start_time = sample_layer, sample_time
+                break
+        layer_delta = current - start_layer
+        elapsed_seconds = now - start_time
+        if layer_delta < ETA_MIN_WINDOW_LAYERS or elapsed_seconds < ETA_MIN_WINDOW_SECONDS:
+            start_layer, start_time = self.eta_samples[0]
+            layer_delta = current - start_layer
+            elapsed_seconds = now - start_time
+            if layer_delta < ETA_MIN_WINDOW_LAYERS or elapsed_seconds < ETA_MIN_WINDOW_SECONDS:
+                return friendly
+
+        seconds_per_layer = elapsed_seconds / layer_delta
+        self.eta_smoothed_seconds_per_layer = seconds_per_layer
+        measured_remaining = seconds_per_layer * remaining_layers
         if self.eta_display_remaining is None:
-            self.eta_display_remaining = remaining_seconds
+            self.eta_display_remaining = measured_remaining
         else:
-            expected_remaining = max(0, self.eta_display_remaining - elapsed_seconds)
-            self.eta_display_remaining = expected_remaining * 0.8 + remaining_seconds * 0.2
+            elapsed_since_display = now - self.eta_display_time if self.eta_display_time is not None else 0
+            expected_remaining = max(0, self.eta_display_remaining - elapsed_since_display)
+            if measured_remaining < expected_remaining * 0.65 or measured_remaining > expected_remaining * 1.6:
+                self.eta_display_remaining = measured_remaining
+            else:
+                self.eta_display_remaining = expected_remaining * 0.35 + measured_remaining * 0.65
+        self.eta_display_time = now
         remaining_seconds = self.eta_display_remaining
         eta_time = datetime.fromtimestamp(now + remaining_seconds).strftime("%H:%M:%S")
         return f"{friendly} | ETA {eta_time} ({self._format_remaining_time(remaining_seconds)})"

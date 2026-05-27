@@ -25,6 +25,8 @@ import os
 from utils import load_cv2, parse_int
 
 FH6_DISCOVERED_TABLE_POINTER_DELTA = 0x1E
+FH6_CIRCLE_BASE_SIZE = 63.0
+FH6_RECTANGLE_BASE_SIZE = 127.0
 
 
 def is_admin():
@@ -151,17 +153,17 @@ def draw_memory_shape(pid: int, profile, shape: Shape, index: int, cLiveryLayerT
     pos_data = struct.pack('f', shape.x) + struct.pack('f', -shape.y)
     try:
         write_process_memory(pid, current_layer_address + profile.layer_position_offset, pos_data)
-        scale_divisor = 63 if shape.type_id == 16 else 127
+        scale_divisor = FH6_CIRCLE_BASE_SIZE if shape.type_id == ROTATED_ELLIPSE else FH6_RECTANGLE_BASE_SIZE
         scale_data = struct.pack('f', shape.w / scale_divisor) + struct.pack('f', shape.h / scale_divisor)
         write_process_memory(pid, current_layer_address + profile.layer_scale_offset, scale_data)
         rot_data = struct.pack('f', 360 - shape.rot_deg)
         write_process_memory(pid, current_layer_address + profile.layer_rotation_offset, rot_data)
         color_data = shape.color.get_struct()
         write_process_memory(pid, current_layer_address + profile.layer_color_offset, color_data)
-        if shape.type_id == 16:
+        if shape.type_id == ROTATED_ELLIPSE:
             shape_id_data = struct.pack('B', 102)
             write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, shape_id_data)
-        elif shape.type_id == 1:
+        elif shape.type_id == RECTANGLE:
             shape_id_data = struct.pack('B', 101)
             write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, shape_id_data)
         mask_flag = struct.pack('B', 1 if shape.is_mask else 0)

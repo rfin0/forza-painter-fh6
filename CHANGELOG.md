@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.7 / 2026-05-27
+
+- Updated the app version to `v1.6.7`; release packages now use `forza-painter-fh6-v1.6.7.exe`.
+- Updated the bundled GPU generator to upstream `canary-26052702`.
+- Replaced FH6 import scale magic numbers with named `FH6_CIRCLE_BASE_SIZE` and `FH6_RECTANGLE_BASE_SIZE` constants so the in-game circle base size can be adjusted explicitly.
+- Improved generation ETA estimation so buffered generator output and early slow phases do not keep the remaining-time display wildly inaccurate.
+
 ## v1.6.6 / 2026-05-26
 
 - Updated the app version to `v1.6.6`; release packages now use `forza-painter-fh6-v1.6.6.exe`.
