@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.8 / 2026-05-28
+
+- Updated the app version to `v1.6.8`; release packages now use `forza-painter-fh6-v1.6.8.exe`.
+- Integrated the latest GitHub `main` changes from PR #87, keeping ellipse width/height as floating-point values for more accurate FH6 imports.
+- Added an in-app preview note explaining that v1.6.8 favors better in-game results while previews remain approximate.
+- Improved JSON preview rendering with supersampling so float-sized ellipses look less jagged or degraded in the preview panel.
+
 ## v1.6.7 / 2026-05-27
 
 - Updated the app version to `v1.6.7`; release packages now use `forza-painter-fh6-v1.6.7.exe`.

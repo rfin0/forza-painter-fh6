@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 APP_DISPLAY_NAME = "forza-painter FH6"
-__version__ = "1.6.7"
+__version__ = "1.6.8"
 
 
 def app_title():

@@ -64,6 +64,7 @@ ETA_WINDOW_SECONDS = 45.0
 ETA_MAX_HISTORY_SECONDS = 180.0
 ETA_MIN_WINDOW_SECONDS = 4.0
 ETA_MIN_WINDOW_LAYERS = 25
+PREVIEW_JSON_SUPERSAMPLE = 2
 
 
 # Removed: TEXT dictionary (now in i18n.py)
@@ -357,16 +358,19 @@ def render_geometry_json_pillow(path, max_size=None):
         scale = preview_scale(image_w, image_h, max_size)
         preview_w = max(1, int(round(image_w * scale)))
         preview_h = max(1, int(round(image_h * scale)))
+        render_scale = scale * PREVIEW_JSON_SUPERSAMPLE
+        render_w = max(1, preview_w * PREVIEW_JSON_SUPERSAMPLE)
+        render_h = max(1, preview_h * PREVIEW_JSON_SUPERSAMPLE)
         if bg_a > 0:
-            preview = Image.new("RGB", (preview_w, preview_h), (bg_r, bg_g, bg_b))
+            preview = Image.new("RGB", (render_w, render_h), (bg_r, bg_g, bg_b))
         else:
-            preview = Image.new("RGB", (preview_w, preview_h), (38, 38, 38))
+            preview = Image.new("RGB", (render_w, render_h), (38, 38, 38))
             draw_bg = ImageDraw.Draw(preview)
-            tile = max(8, int(round(32 * scale)))
-            for y in range(0, preview_h, tile):
-                for x in range(0, preview_w, tile):
+            tile = max(8, int(round(32 * render_scale)))
+            for y in range(0, render_h, tile):
+                for x in range(0, render_w, tile):
                     if ((x // tile) + (y // tile)) % 2 == 0:
-                        draw_bg.rectangle((x, y, min(preview_w, x + tile), min(preview_h, y + tile)), fill=(58, 58, 58))
+                        draw_bg.rectangle((x, y, min(render_w, x + tile), min(render_h, y + tile)), fill=(58, 58, 58))
         draw = ImageDraw.Draw(preview)
         for shape in shapes[1:]:
             color = [int(v) for v in shape.get("color", [])]
@@ -376,14 +380,16 @@ def render_geometry_json_pillow(path, max_size=None):
             shape_type = int(shape.get("type", 0))
             if shape_type == RECTANGLE:
                 x, y, w, h = [float(v) for v in shape["data"]]
-                x0 = int(round((x - w / 2) * scale))
-                y0 = int(round((y - h / 2) * scale))
-                x1 = int(round((x + w / 2) * scale))
-                y1 = int(round((y + h / 2) * scale))
+                x0 = int(round((x - w / 2) * render_scale))
+                y0 = int(round((y - h / 2) * render_scale))
+                x1 = int(round((x + w / 2) * render_scale))
+                y1 = int(round((y + h / 2) * render_scale))
                 draw.rectangle((x0, y0, x1, y1), fill=(r, g, b))
             elif shape_type == ROTATED_ELLIPSE:
                 x, y, w, h, rot_deg = [float(v) for v in shape["data"]]
-                draw_preview_ellipse_pillow(preview, x, y, w, h, rot_deg, (r, g, b), scale)
+                draw_preview_ellipse_pillow(preview, x, y, w, h, rot_deg, (r, g, b), render_scale)
+        if PREVIEW_JSON_SUPERSAMPLE > 1:
+            preview = preview.resize((preview_w, preview_h), Image.Resampling.LANCZOS)
         return pil_to_photo(preview)
     except Exception:
         return None
@@ -908,7 +914,10 @@ class App:
         self.stop_generate_button.pack(side=LEFT, padx=8)
         self._button(actions, "open_output", self.open_output_folder, height=2).pack(side=LEFT)
 
-        self._label(right, "preview", anchor="w", font=("Segoe UI", 12, "bold")).pack(fill=X)
+        preview_header = Frame(right)
+        preview_header.pack(fill=X)
+        self._label(preview_header, "preview", anchor="w", font=("Segoe UI", 12, "bold")).pack(side=LEFT)
+        self._label(preview_header, "preview_accuracy_note", anchor="e", justify=RIGHT, fg=Theme.WARN, wraplength=420).pack(side=RIGHT, fill=X, expand=True)
         self.preview_label = Label(right, text=tr(self.lang, "preview_hint"), bg="#202020", fg="#dddddd", width=60, height=24)
         self.preview_label.pack(fill=BOTH, expand=True, pady=6)
         self.preview_label.bind("<Configure>", self._schedule_preview_refresh)
@@ -975,7 +984,10 @@ class App:
         self._field(self.advanced_frame, "manual_table", self.table_address, row=1)
         self._button(self.advanced_frame, "auto_locate", self.start_auto_locate).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 4))
 
-        self._label(right, "import_preview", anchor="w", font=("Segoe UI", 12, "bold")).pack(fill=X, pady=(8, 0))
+        import_preview_header = Frame(right)
+        import_preview_header.pack(fill=X, pady=(8, 0))
+        self._label(import_preview_header, "import_preview", anchor="w", font=("Segoe UI", 12, "bold")).pack(side=LEFT)
+        self._label(import_preview_header, "preview_accuracy_note", anchor="e", justify=RIGHT, fg=Theme.WARN, wraplength=420).pack(side=RIGHT, fill=X, expand=True)
         self.import_preview_label = Label(right, text=tr(self.lang, "preview_hint"), bg="#202020", fg="#dddddd", width=56, height=20)
         self.import_preview_label.pack(fill=BOTH, expand=True, pady=6)
         self.import_preview_label.bind("<Configure>", self._schedule_preview_refresh)

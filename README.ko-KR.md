@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-  <code>v1.6.7</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
+  <code>v1.6.8</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
 PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니다. 앱에서 생성, 미리보기, 가져오기를 한 번에 처리하며 일반 사용자는 Python, `.venv`, 배치 파일, 메모리 주소 입력이 필요 없습니다.
 
-> **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.6.7.exe`를 내려받아 바로 실행하세요.
+> **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.6.8.exe`를 내려받아 바로 실행하세요.
 
 > **결과가 흐릿하면:** 먼저 `Random samples` 값을 높이세요. **200000** 이상부터 품질 차이가 크게 보이는 경우가 많습니다.
 
@@ -36,7 +36,7 @@ PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니
 
 ## 빠른 시작
 
-1. [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.6.7.exe`를 다운로드합니다.
+1. [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.6.8.exe`를 다운로드합니다.
 2. EXE를 쓰기 가능한 일반 폴더에 둡니다. 예: `Desktop\forza-painter-fh6`.
 3. EXE를 더블 클릭합니다. FH6 가져오기에서 Windows가 프로세스 접근을 막으면 관리자 권한으로 실행하세요.
 4. FH6에서 `Create Vinyl Group` / `Vinyl Group Editor`를 열고 sphere 템플릿을 불러온 뒤 `Ungroup`합니다.
@@ -140,6 +140,13 @@ EXE 옆에 생길 수 있는 외부 폴더:
 ## 변경 기록
 
 여기에는 버전 번호가 있는 릴리스만 남깁니다. 앱 업데이트 안내에 쓰이는 전체 기록은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
+
+### v1.6.8 / 2026-05-28
+
+- 앱 버전을 `v1.6.8`로 업데이트했습니다. 릴리스 파일은 이제 `forza-painter-fh6-v1.6.8.exe`를 사용합니다.
+- 최신 GitHub `main` 변경 사항을 반영해 타원의 너비/높이를 소수 값으로 유지하며, 게임 내 가져오기 정확도를 높였습니다.
+- 미리보기 영역에 v1.6.8은 게임 내 결과를 우선하고 미리보기는 근사치라는 안내를 추가했습니다.
+- JSON 미리보기에 supersampling을 적용해 소수 크기 타원이 미리보기에서 더 거칠게 보이는 문제를 줄였습니다.
 
 ### v1.6.7 / 2026-05-27
 
