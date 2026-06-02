@@ -52,12 +52,13 @@ from utils import load_cv2, load_pillow
 
 from i18n import tr
 
-LANGUAGES = {
+LANGUAGES = { 
     "English": "en",
     "Português (Brasil)": "pt-br",
     "中文": "zh",
     "中文 (繁體)": "zh-tw",
     "한국어": "ko",
+    "Español": "es",
 }
 
 ETA_MAX_PROGRESS_SAMPLES = 400
