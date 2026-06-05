@@ -124,6 +124,18 @@ Use this only for full-shape JSONs. Normal generated ellipse JSON should still u
 - It does not copy volatile FH6 resource pointers such as `0xA8`.
 - After import completes, save and reload the FH6 vinyl group before judging stale UI thumbnails.
 
+## Experimental Region Paint
+
+Region Paint is an iterative painting workflow that generates a base layer pass across the whole image, then lets you select regions (using Rectangle or Ellipse tools) and refine only those areas with additional layers.
+
+- Add a single image, choose a Quality Profile (which sets the Total budget from `stopAt`), and adjust First-pass and Region layers.
+- Click `Start First Pass` to generate base layers. A preview appears on the right canvas.
+- Use the Rectangle or Ellipse tool on the left canvas to draw a selection region. The red overlay shows your selection.
+- Click `Paint Selected Region` to add more layers only inside that region. Repeat for each area.
+- After all passes, use `Open Result Folder` or `Save Result JSON` to get the final `base.json`.
+- Import the result JSON using the `Import` tab — same workflow as standard generation.
+- The remaining budget is shown next to `Remaining`. Each region pass consumes layers from this budget.
+
 ## Important Rules
 
 - The FH6 template must be ungrouped before import.

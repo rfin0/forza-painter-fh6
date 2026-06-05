@@ -106,6 +106,18 @@ Una sola imagen puede generar varios archivos JSON de punto de control. Se recom
 
 FH necesita 4 capas extra de límite para guardar correctamente la portada y aplicar los límites. Ejemplo: un JSON de 1000 capas debe usar al menos una plantilla de 1004 capas; una plantilla de 3000 capas puede importar aproximadamente 2996 formas dibujables.
 
+## Pintura por Regiones Experimental (Region Paint)
+
+Region Paint es un flujo de trabajo de pintura iterativa que genera un pase de capas base en toda la imagen, luego te permite seleccionar regiones (usando herramientas de Rectángulo o Elipse) y refinar solo esas áreas con capas adicionales.
+
+- Agrega una sola imagen, elige un Perfil de Calidad (que establece el presupuesto Total desde `stopAt`) y ajusta las capas del Primer pase y de Región.
+- Haz clic en `Start First Pass` para generar las capas base. Aparecerá una vista previa en el lienzo derecho.
+- Usa la herramienta Rectángulo o Elipse en el lienzo izquierdo para dibujar una región de selección. La superposición roja muestra tu selección.
+- Haz clic en `Paint Selected Region` para agregar más capas solo dentro de esa región. Repite para cada área.
+- Después de todos los pases, usa `Open Result Folder` o `Save Result JSON` para obtener el `base.json` final.
+- Importa el JSON resultante usando la pestaña `Import` — el mismo flujo que la generación estándar.
+- El presupuesto restante se muestra junto a `Remaining`. Cada pase de región consume capas de este presupuesto.
+
 ## Reglas importantes
 
 - La plantilla de FH6 debe estar desagrupada antes de importar.
