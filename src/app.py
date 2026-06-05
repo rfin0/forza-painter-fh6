@@ -870,6 +870,7 @@ class App:
         self.advanced_visible = False
         # Region Paint state
         self.region_images: list[Path] = []
+        self.region_image_label_var = StringVar(value="")
         self._region_preview_showing: str = ""
         self.region_selected_profile = StringVar()
         self.region_total_var = StringVar(value="2000")
@@ -1453,10 +1454,7 @@ class App:
         row.pack(fill=X, padx=10, pady=(6, 2))
         self._label(row, "images").pack(side=LEFT)
         self._button(row, "add_images", self.region_add_image).pack(side=RIGHT)
-        self._button(row, "remove_image", self.region_remove_image).pack(side=RIGHT, padx=8)
-        self.region_image_list = Listbox(step1, height=2, exportselection=False)
-        self.region_image_list.pack(fill=X, padx=10, pady=(2, 4))
-        self.region_image_list.bind("<<ListboxSelect>>", self._region_on_image_select)
+        Label(step1, textvariable=self.region_image_label_var, anchor="w", bg=self._parent_bg(step1), fg=Theme.MUTED, wraplength=350).pack(fill=X, padx=10, pady=(2, 4))
         profile_row = Frame(step1)
         profile_row.pack(fill=X, padx=10, pady=(0, 8))
         self._label(profile_row, "quality").pack(side=LEFT)
@@ -1533,8 +1531,8 @@ class App:
         self.region_stop_btn.pack(side=LEFT, padx=6)
         status_row = Frame(step4)
         status_row.pack(fill=X, padx=10, pady=(0, 8))
-        Label(status_row, textvariable=self.region_status, fg=Theme.MUTED, bg=self._parent_bg(status_row)).pack(side=LEFT)
-        Label(status_row, textvariable=self.region_progress, fg=Theme.ACCENT, bg=self._parent_bg(status_row), font=("Segoe UI", 9)).pack(side=RIGHT)
+        Label(status_row, textvariable=self.region_status, fg=Theme.MUTED, bg=self._parent_bg(status_row), anchor="w", wraplength=180).pack(side=LEFT)
+        Label(status_row, textvariable=self.region_progress, fg=Theme.ACCENT, bg=self._parent_bg(status_row), font=("Segoe UI", 9), anchor="e", wraplength=180).pack(side=RIGHT)
 
         # Pass History
         hist = ttk.LabelFrame(left_outer, text=tr(self.lang, "region_pass_history"))
@@ -1542,6 +1540,14 @@ class App:
         hist.pack(fill=X, pady=(6, 0))
         self.region_pass_list = Listbox(hist, height=4)
         self.region_pass_list.pack(fill=X, padx=10, pady=(4, 8))
+
+        # Result actions
+        result_row = Frame(left_outer)
+        result_row.pack(fill=X, pady=(4, 0))
+        self.region_open_folder_btn = self._button(result_row, "region_open_result_folder", self._region_open_result_folder, state="disabled")
+        self.region_open_folder_btn.pack(side=LEFT, fill=X, expand=True)
+        self.region_save_json_btn = self._button(result_row, "region_save_result_json", self._region_save_result_json, state="disabled")
+        self.region_save_json_btn.pack(side=LEFT, padx=6, fill=X, expand=True)
 
         # --- Right panel (Canvas) ---
         right = Frame(self.region_paint_tab)
@@ -1583,12 +1589,11 @@ class App:
         if self.region_workflow_running:
             return
         # Redraw original image on left canvas if an image is selected
-        sel = self.region_image_list.curselection()
-        if sel and sel[0] < len(self.region_images):
+        if self.region_images:
             if getattr(self, "_region_configure_image_job", None):
                 self.region_canvas_left.after_cancel(self._region_configure_image_job)
             self._region_configure_image_job = self.region_canvas_left.after(
-                200, lambda: self._region_display_image(self.region_images[sel[0]])
+                200, lambda: self._region_display_image(self.region_images[0])
             )
         # Redraw preview on right canvas if a preview is showing
         preview = getattr(self, "_region_preview_showing", None)
@@ -1608,43 +1613,25 @@ class App:
             title=tr(self.lang, "add_images"),
             filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp"), ("All files", "*.*")],
         )
-        for p in paths:
-            pp = Path(p)
-            if pp.exists() and pp not in self.region_images:
-                self.region_images.append(pp)
-        self._region_refresh_image_list()
-        # Auto-select the last added image
-        if self.region_images:
-            last_idx = len(self.region_images) - 1
-            self.region_image_list.selection_clear(0, END)
-            self.region_image_list.selection_set(last_idx)
-            self.region_image_list.see(last_idx)
-            self._region_display_image(self.region_images[last_idx])
-
-    def region_remove_image(self):
-        sel = self.region_image_list.curselection()
-        if sel:
-            idx = sel[0]
-            if 0 <= idx < len(self.region_images):
-                del self.region_images[idx]
-        self._region_refresh_image_list()
-        self._region_clear_mask()
-
-    def _region_refresh_image_list(self):
-        self.region_image_list.delete(0, END)
-        for p in self.region_images:
-            self.region_image_list.insert(END, str(p))
-        self._region_update_button_states()
-
-    def _region_on_image_select(self, _event=None):
-        """Display the selected image on the canvas."""
-        self._region_preview_showing = ""  # Clear preview state when manually selecting
-        sel = self.region_image_list.curselection()
-        if not sel:
+        if not paths:
             return
-        idx = sel[0]
-        if 0 <= idx < len(self.region_images):
-            self._region_display_image(self.region_images[idx])
+        # Only keep the last selected image — replace any existing image.
+        pp = Path(paths[-1])
+        if not pp.exists():
+            return
+        self.region_images.clear()
+        self.region_images.append(pp)
+        self._region_clear_mask()
+        self._region_update_image_label()
+        self._region_display_image(pp)
+
+    def _region_update_image_label(self):
+        """Update the image label to show the current image path."""
+        if self.region_images:
+            self.region_image_label_var.set(str(self.region_images[0]))
+        else:
+            self.region_image_label_var.set("")
+        self._region_update_button_states()
 
     def _region_display_image(self, image_path: Path):
         """Load and display an image on the LEFT region canvas."""
@@ -1681,18 +1668,12 @@ class App:
         """Compute scale factor: canvas-display-pixels / working-pixels."""
         if not self.region_images:
             return 1.0
-        sel = self.region_image_list.curselection()
-        if not sel:
-            return 1.0
-        idx = sel[0]
-        if idx >= len(self.region_images):
-            return 1.0
         try:
             if self._region_cached_pil is not None:
                 w, h = self._region_cached_pil.size
             else:
                 from PIL import Image
-                img = Image.open(self.region_images[idx])
+                img = Image.open(self.region_images[0])
                 w, h = img.size
             display_w = max(1, (self.region_canvas.winfo_width() or 600) - 4)
             display_h = max(1, (self.region_canvas.winfo_height() or 500) - 4)
@@ -1751,16 +1732,11 @@ class App:
             return
         if not self.region_images:
             return
-        sel = self.region_image_list.curselection()
-        if not sel:
-            return
-        idx = sel[0]
-        if idx >= len(self.region_images):
-            return
+        image_path = self.region_images[0]
         # Use cached full-res image to avoid disk I/O.
-        if self._region_cached_pil is None or self._region_cached_pil_path != self.region_images[idx]:
-            self._region_cached_pil = Image.open(self.region_images[idx]).convert("RGBA")
-            self._region_cached_pil_path = self.region_images[idx]
+        if self._region_cached_pil is None or self._region_cached_pil_path != image_path:
+            self._region_cached_pil = Image.open(image_path).convert("RGBA")
+            self._region_cached_pil_path = image_path
         img = self._region_cached_pil.copy()
         cw = self.region_canvas.winfo_width() or 600
         ch = self.region_canvas.winfo_height() or 500
@@ -1797,24 +1773,16 @@ class App:
             self.region_rubber_id = None
         self.region_mask = None
         if self.region_images:
-            sel = self.region_image_list.curselection()
-            if sel and sel[0] < len(self.region_images):
-                self._region_display_image(self.region_images[sel[0]])
+            self._region_display_image(self.region_images[0])
         self._region_update_button_states()
 
     def _region_generate_mask(self) -> "Image.Image | None":
         """Convert canvas shapes to a PIL 'L' mask at working resolution."""
-        if not self.region_shapes:
-            return None
-        sel = self.region_image_list.curselection()
-        if not sel:
-            return None
-        idx = sel[0]
-        if idx >= len(self.region_images):
+        if not self.region_shapes or not self.region_images:
             return None
         try:
             from PIL import Image
-            img = Image.open(self.region_images[idx])
+            img = Image.open(self.region_images[0])
             w, h = img.size
             scale = self._region_get_canvas_scale()
             from region_painter.image_processor import mask_from_canvas_shapes
@@ -1836,9 +1804,12 @@ class App:
         has_image = bool(self.region_images)
         has_shapes = bool(self.region_shapes)
         running = self.region_workflow_running
+        has_output = bool(self.region_current_output_dir)
         self.region_first_pass_btn.config(state="normal" if has_image and not running else "disabled")
         self.region_paint_btn.config(state="normal" if has_image and has_shapes and not running else "disabled")
         self.region_stop_btn.config(state="normal" if running else "disabled")
+        self.region_open_folder_btn.config(state="normal" if has_output and not running else "disabled")
+        self.region_save_json_btn.config(state="normal" if has_output and not running else "disabled")
         # Update remaining from saved state if available, else from entries
         if self.region_current_output_dir:
             try:
@@ -1867,6 +1838,42 @@ class App:
                 self._region_update_button_states()
 
     # ==================================================================
+    # Region Paint — Result actions
+    # ==================================================================
+
+    def _region_open_result_folder(self):
+        """Open the current output directory in the file manager."""
+        if not self.region_current_output_dir:
+            return
+        folder = Path(self.region_current_output_dir)
+        if folder.exists():
+            os.startfile(folder)
+            self.log_line(f"Region Paint: opened result folder — {folder}")
+
+    def _region_save_result_json(self):
+        """Save base.json from the current output directory to a user-chosen location."""
+        if not self.region_current_output_dir:
+            return
+        base_json = Path(self.region_current_output_dir) / "base.json"
+        if not base_json.exists():
+            self.log_line("Region Paint: result JSON not found. Run a pass first.")
+            return
+        output = filedialog.asksaveasfilename(
+            title="Save result JSON",
+            initialdir=str(Path(self.region_current_output_dir)),
+            initialfile="base.json",
+            defaultextension=".json",
+            filetypes=[("Geometry JSON", "*.json"), ("All files", "*.*")],
+        )
+        if not output:
+            return
+        try:
+            shutil.copy2(base_json, output)
+            self.log_line(f"Region Paint: result JSON saved — {output}")
+        except OSError as exc:
+            self.log_line(f"Region Paint: failed to save result JSON: {exc}")
+
+    # ==================================================================
     # Region Paint — Worker threads
     # ==================================================================
 
@@ -1874,11 +1881,7 @@ class App:
         if not self.region_images:
             self.log_line(tr(self.lang, "region_no_image"))
             return
-        sel = self.region_image_list.curselection()
-        if not sel:
-            self.log_line(tr(self.lang, "region_no_image"))
-            return
-        image_path = self.region_images[sel[0]]
+        image_path = self.region_images[0]
         profile_label = self.region_selected_profile.get()
         setting = next((s for s in self.settings if s["label"] == profile_label), None)
         if setting is None and self.settings:

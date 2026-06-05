@@ -169,6 +169,8 @@ Notes
         "region_first_pass_done": "First pass complete. {layers} layers used. Select a region to refine.",
         "region_pass_done": "Region pass complete. {layers} layers added, {remaining} remaining.",
         "region_no_first_pass": "Run the first pass before painting regions.",
+        "region_open_result_folder": "Open Result Folder",
+        "region_save_result_json": "Save Result JSON",
     },
     "pt-br": {
         "title": app_title(),
@@ -335,6 +337,8 @@ Observações
         "region_first_pass_done": "First pass complete. {layers} layers used. Select a region to refine.",
         "region_pass_done": "Region pass complete. {layers} layers added, {remaining} remaining.",
         "region_no_first_pass": "Run the first pass before painting regions.",
+        "region_open_result_folder": "Open Result Folder",
+        "region_save_result_json": "Save Result JSON",
     },
     "zh": {
         "title": app_title(),
@@ -501,6 +505,8 @@ Observações
         "region_first_pass_done": "First pass complete. {layers} layers used. Select a region to refine.",
         "region_pass_done": "Region pass complete. {layers} layers added, {remaining} remaining.",
         "region_no_first_pass": "Run the first pass before painting regions.",
+        "region_open_result_folder": "Open Result Folder",
+        "region_save_result_json": "Save Result JSON",
     },
     "zh-tw": {
         "title": app_title(),
@@ -667,6 +673,8 @@ Observações
         "region_first_pass_done": "First pass complete. {layers} layers used. Select a region to refine.",
         "region_pass_done": "Region pass complete. {layers} layers added, {remaining} remaining.",
         "region_no_first_pass": "Run the first pass before painting regions.",
+        "region_open_result_folder": "Open Result Folder",
+        "region_save_result_json": "Save Result JSON",
     },
     "ko": {
         "title": app_title(),
@@ -833,6 +841,8 @@ Observações
         "region_first_pass_done": "First pass complete. {layers} layers used. Select a region to refine.",
         "region_pass_done": "Region pass complete. {layers} layers added, {remaining} remaining.",
         "region_no_first_pass": "Run the first pass before painting regions.",
+        "region_open_result_folder": "Open Result Folder",
+        "region_save_result_json": "Save Result JSON",
     },
     "es": {
         "title": app_title(),

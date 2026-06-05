@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
+
 from utils import load_cv2
 
 _EXE_PREVIEW_GLOB = "_exe_preview.*.png"
@@ -187,6 +189,116 @@ def render_preview(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     from PIL import Image as PILImage
     PILImage.fromarray(rgba, "RGBA").save(str(output_path), "PNG")
+
+
+# ---------------------------------------------------------------------------
+# High-quality renderer — matches Go generator's float32 RGBA approach
+# ---------------------------------------------------------------------------
+
+def render_preview_high_quality(
+    target_path: str | Path,
+    shapes: list[dict],
+    output_path: str | Path,
+    max_preview_size: int = 500,
+) -> None:
+    """Render shapes with sub-pixel float32 RGBA blending (matches Go generator).
+
+    Key improvements over render_preview:
+    - float32 canvas (0-1 range) for proper alpha compositing
+    - Sub-pixel mask generation with +0.5 offset (smoother edges)
+    - Proper alpha channel blending (no black-fringe artifact)
+    """
+    target_path = Path(target_path)
+    output_path = Path(output_path)
+
+    if not shapes:
+        return
+    bg_data = shapes[0].get("data", [])
+    if len(bg_data) < 4:
+        return
+    image_w = int(bg_data[2])
+    image_h = int(bg_data[3])
+
+    # Load target image as float32 RGBA canvas (0-1).
+    try:
+        from PIL import Image as PILImage
+        target_img = PILImage.open(target_path).convert("RGBA")
+        if target_img.size != (image_w, image_h):
+            target_img = target_img.resize((image_w, image_h), PILImage.LANCZOS)
+        canvas = np.array(target_img, dtype=np.float32) / 255.0
+    except Exception:
+        # Fallback: start with transparent canvas.
+        canvas = np.zeros((image_h, image_w, 4), dtype=np.float32)
+        bg_color = shapes[0].get("color", [0, 0, 0, 0])
+        if len(bg_color) == 4 and int(bg_color[3]) > 0:
+            canvas[:, :, 0] = int(bg_color[0]) / 255.0
+            canvas[:, :, 1] = int(bg_color[1]) / 255.0
+            canvas[:, :, 2] = int(bg_color[2]) / 255.0
+            canvas[:, :, 3] = int(bg_color[3]) / 255.0
+
+    # Draw each shape with sub-pixel float32 alpha blending.
+    for shape in shapes[1:]:
+        color = shape.get("color", [])
+        if len(color) < 4 or int(color[3]) <= 0:
+            continue
+        r = int(color[0]) / 255.0
+        g = int(color[1]) / 255.0
+        b = int(color[2]) / 255.0
+        a = int(color[3]) / 255.0
+        shape_type = int(shape["type"])
+        data = shape["data"]
+
+        mask = _make_shape_mask_f32(shape_type, data, image_w, image_h)
+        if mask is None:
+            continue
+
+        # Alpha blend: dst = dst*(1-a) + src*a  (all 4 channels)
+        inv_a = 1.0 - a
+        canvas[mask, 0] = canvas[mask, 0] * inv_a + r * a
+        canvas[mask, 1] = canvas[mask, 1] * inv_a + g * a
+        canvas[mask, 2] = canvas[mask, 2] * inv_a + b * a
+        canvas[mask, 3] = canvas[mask, 3] * inv_a + a
+
+    # Convert back to uint8 RGBA.
+    result = (np.clip(canvas * 255.0, 0, 255)).astype(np.uint8)
+
+    # Resize if needed.
+    if max(image_w, image_h) > max_preview_size:
+        ratio = max_preview_size / max(image_w, image_h)
+        new_w = max(1, int(image_w * ratio))
+        new_h = max(1, int(image_h * ratio))
+        from PIL import Image as PILImage
+        pil_img = PILImage.fromarray(result, "RGBA")
+        pil_img = pil_img.resize((new_w, new_h), PILImage.LANCZOS)
+    else:
+        from PIL import Image as PILImage
+        pil_img = PILImage.fromarray(result, "RGBA")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    pil_img.save(str(output_path), "PNG")
+
+
+def _make_shape_mask_f32(shape_type: int, data: list, w: int, h: int):
+    """Generate a boolean mask for a shape with sub-pixel precision."""
+    yy, xx = np.mgrid[:h, :w]
+    # +0.5 sub-pixel offset — matches Go generator's x+0.5 / y+0.5
+    fx = xx.astype(np.float32) + 0.5
+    fy = yy.astype(np.float32) + 0.5
+
+    if shape_type == 1:  # Rectangle
+        x, y, sw, sh = [float(v) for v in data]
+        return (fx >= x - sw / 2.0) & (fx <= x + sw / 2.0) & (fy >= y - sh / 2.0) & (fy <= y + sh / 2.0)
+    elif shape_type == 16:  # Rotated Ellipse
+        x, y, sw, sh = [float(v) for v in data[:4]]
+        rot_deg = float(data[4]) if len(data) >= 5 else 0.0
+        theta = np.radians(-90.0 + rot_deg)
+        cos_t, sin_t = np.cos(theta), np.sin(theta)
+        dx = fx - x
+        dy = fy - y
+        xr = dx * cos_t + dy * sin_t
+        yr = -dx * sin_t + dy * cos_t
+        return (xr * xr) / (sh * sh) + (yr * yr) / (sw * sw) <= 1.0
+    return None
 
 
 def prune_shapes_for_region(

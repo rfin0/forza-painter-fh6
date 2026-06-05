@@ -18,6 +18,7 @@ from region_painter.preview_renderer import (
     load_shapes_from_json,
     prune_shapes_for_region,
     render_preview,
+    render_preview_high_quality,
     render_shapes_to_array,
 )
 from region_painter.state_manager import StateManager
@@ -94,9 +95,8 @@ def finalize_first_pass(prep):
         shutil.copy2(actual_json, base_json)
     shapes = load_shapes_from_json(base_json)
     layers = max(0, len(shapes) - 1)
-    # cv2 renderer (built-in exe-preview fallback)
     try:
-        render_preview(target_png, shapes, preview_png, max_preview_size)
+        render_preview_high_quality(target_png, shapes, preview_png, max_preview_size)
     except Exception:
         pass
     state.base_json = str(base_json)
@@ -264,7 +264,7 @@ def finalize_region_pass(prep):
 
     # Render preview.
     try:
-        render_preview(target_png, merged, preview_png, max_preview_size)
+        render_preview_high_quality(target_png, merged, preview_png, max_preview_size)
     except Exception:
         pass
 
