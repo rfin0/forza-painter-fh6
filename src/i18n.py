@@ -333,29 +333,29 @@ Observações
 - Os endereços atuais do FH6 só são válidos para o processo atual do jogo e o estado atual do editor.
 - Se o app não encontrar um modelo seguro, confirme que o editor está aberto, que o modelo está desagrupado e que a contagem de camadas está exata.
 
-Region Paint
+Pintura Regional
 
-Region Paint lets you iteratively refine specific areas of an image. Instead of generating all layers at once, you generate a base layer pass first, then select regions (faces, details, etc.) and add extra layers only to those areas.
+A Pintura Regional permite refinar iterativamente áreas específicas de uma imagem. Em vez de gerar todas as camadas de uma vez, você gera uma primeira passagem base e depois seleciona regiões (rostos, detalhes, etc.) para adicionar camadas extras apenas nessas áreas.
 
-1. Open Region Paint tab. Click Add Image to select a PNG/JPG/BMP.
+1. Abra a aba Pintura Regional. Clique em Adicionar Imagem para selecionar um PNG/JPG/BMP.
 
-2. Choose a Quality Profile — this sets the Total budget (stopAt value from the profile). Adjust First-pass layers (how many layers to generate initially across the whole image) and Region layers (how many to add per selected region).
+2. Escolha um Perfil de Qualidade — isso define o Orçamento total (valor stopAt do perfil). Ajuste as Camadas da 1ª passagem (quantas camadas gerar inicialmente na imagem inteira) e Camadas por região (quantas adicionar por região selecionada).
 
-3. On the Original canvas, use Rectangle or Ellipse tool to draw a selection region. The red overlay shows your selection. Use Clear Mask to remove the selection.
+3. No canvas Original, use a ferramenta Retângulo ou Elipse para desenhar uma região de seleção. A sobreposição vermelha mostra sua seleção. Use Limpar Máscara para remover a seleção.
 
-4. Click Start First Pass to generate the base layers. Wait for completion — a preview appears on the right canvas.
+4. Clique em Iniciar 1ª Passagem para gerar as camadas base. Aguarde a conclusão — uma pré-visualização aparece no canvas direito.
 
-5. Draw a selection region on the left canvas, then click Paint Selected Region to add more layers only inside that region. Repeat for each area you want to refine.
+5. Desenhe uma região de seleção no canvas esquerdo e clique em Pintar Região Selecionada para adicionar mais camadas apenas dentro dessa região. Repita para cada área que deseja refinar.
 
-6. After all passes, use Open Result Folder to find base.json in the output directory, or Save Result JSON to export it to a custom location.
+6. Após todas as passagens, use Abrir Pasta de Resultados para encontrar o base.json no diretório de saída, ou Salvar JSON do Resultado para exportá-lo para um local personalizado.
 
-7. Import the result JSON using the Import tab — same workflow as standard generation.
+7. Importe o JSON resultante usando a aba Importar — mesmo fluxo da geração padrão.
 
-Tips
+Dicas
 
-- The remaining budget is shown next to Remaining. Each region pass consumes layers from this budget.
-- Feather controls how soft the selection edge blends into the surrounding area.
-- You can run multiple region passes on the same area for extra refinement.
+- O orçamento restante é mostrado ao lado de Restante. Cada passagem regional consome camadas deste orçamento.
+- Suavização controla o quão suave a borda da seleção se mescla com a área ao redor.
+- Você pode executar várias passagens regionais na mesma área para refinamento extra.
 """,
         "region_paint_tab": "Pintura Regional",
         "region_step_image": "Passo 1 — Escolher imagem e perfil",
@@ -525,29 +525,29 @@ Tips
 - FH6 地址只对当前游戏进程和当前编辑器状态有效。
 - 如果软件找不到安全模板，请确认编辑器仍然打开、模板已经 ungroup、层数填写完全正确。
 
-Region Paint
+区域绘制
 
-Region Paint lets you iteratively refine specific areas of an image. Instead of generating all layers at once, you generate a base layer pass first, then select regions (faces, details, etc.) and add extra layers only to those areas.
+区域绘制可以迭代地细化图片的特定区域。不是一次性生成所有图层，而是先生成全图基础图层，然后选择区域（脸部、细节等），仅对这些区域添加额外图层。
 
-1. Open Region Paint tab. Click Add Image to select a PNG/JPG/BMP.
+1. 打开区域绘制标签页。点击添加图片选择一个 PNG/JPG/BMP。
 
-2. Choose a Quality Profile — this sets the Total budget (stopAt value from the profile). Adjust First-pass layers (how many layers to generate initially across the whole image) and Region layers (how many to add per selected region).
+2. 选择一个品质配置 — 这会设置总预算（配置的 stopAt 值）。调整首轮图层数（最初在整个图片上生成多少层）和区域图层数（每个选中区域添加多少层）。
 
-3. On the Original canvas, use Rectangle or Ellipse tool to draw a selection region. The red overlay shows your selection. Use Clear Mask to remove the selection.
+3. 在原图画布上，使用矩形或椭圆工具绘制选择区域。红色叠加层显示你的选择。使用清除蒙版来移除选择。
 
-4. Click Start First Pass to generate the base layers. Wait for completion — a preview appears on the right canvas.
+4. 点击开始首轮生成来生成基础图层。等待完成 — 预览会出现在右侧画布上。
 
-5. Draw a selection region on the left canvas, then click Paint Selected Region to add more layers only inside that region. Repeat for each area you want to refine.
+5. 在左侧画布上绘制选择区域，然后点击绘制选中区域，仅在该区域内添加更多图层。对每个要细化的区域重复此操作。
 
-6. After all passes, use Open Result Folder to find base.json in the output directory, or Save Result JSON to export it to a custom location.
+6. 所有轮次完成后，使用打开结果文件夹在输出目录中找到 base.json，或使用保存结果 JSON 将其导出到自定义位置。
 
-7. Import the result JSON using the Import tab — same workflow as standard generation.
+7. 使用导入标签页导入结果 JSON — 与标准生成流程相同。
 
-Tips
+提示
 
-- The remaining budget is shown next to Remaining. Each region pass consumes layers from this budget.
-- Feather controls how soft the selection edge blends into the surrounding area.
-- You can run multiple region passes on the same area for extra refinement.
+- 剩余预算显示在"剩余"旁边。每个区域轮次都会消耗此预算中的图层。
+- 羽化控制选择边缘与周围区域混合的柔和程度。
+- 你可以在同一区域运行多个区域轮次以获得额外的细化效果。
 """,
         "region_paint_tab": "区域绘制",
         "region_step_image": "第 1 步 — 选择图片和配置",
@@ -717,29 +717,29 @@ Tips
 - FH6 位址只對目前遊戲處理程序和目前編輯器狀態有效。
 - 如果軟體找不到安全模板，請確認編輯器仍然開啟、模板已經 ungroup、圖層數填寫完全正確。
 
-Region Paint
+區域繪製
 
-Region Paint lets you iteratively refine specific areas of an image. Instead of generating all layers at once, you generate a base layer pass first, then select regions (faces, details, etc.) and add extra layers only to those areas.
+區域繪製可以迭代地細化圖片的特定區域。不是一次性生成所有圖層，而是先生成全圖基礎圖層，然後選擇區域（臉部、細節等），僅對這些區域新增額外圖層。
 
-1. Open Region Paint tab. Click Add Image to select a PNG/JPG/BMP.
+1. 開啟區域繪製標籤頁。點擊新增圖片選擇一個 PNG/JPG/BMP。
 
-2. Choose a Quality Profile — this sets the Total budget (stopAt value from the profile). Adjust First-pass layers (how many layers to generate initially across the whole image) and Region layers (how many to add per selected region).
+2. 選擇一個品質設定 — 這會設定總預算（設定的 stopAt 值）。調整首輪圖層數（最初在整個圖片上產生多少層）和區域圖層數（每個選中區域新增多少層）。
 
-3. On the Original canvas, use Rectangle or Ellipse tool to draw a selection region. The red overlay shows your selection. Use Clear Mask to remove the selection.
+3. 在原圖畫布上，使用矩形或橢圓工具繪製選擇區域。紅色疊加層顯示你的選擇。使用清除遮罩來移除選擇。
 
-4. Click Start First Pass to generate the base layers. Wait for completion — a preview appears on the right canvas.
+4. 點擊開始首輪產生來產生基礎圖層。等待完成 — 預覽會出現在右側畫布上。
 
-5. Draw a selection region on the left canvas, then click Paint Selected Region to add more layers only inside that region. Repeat for each area you want to refine.
+5. 在左側畫布上繪製選擇區域，然後點擊繪製選中區域，僅在該區域內新增更多圖層。對每個要細化的區域重複此操作。
 
-6. After all passes, use Open Result Folder to find base.json in the output directory, or Save Result JSON to export it to a custom location.
+6. 所有輪次完成後，使用開啟結果資料夾在輸出目錄中找到 base.json，或使用儲存結果 JSON 將其匯出到自訂位置。
 
-7. Import the result JSON using the Import tab — same workflow as standard generation.
+7. 使用匯入標籤頁匯入結果 JSON — 與標準產生流程相同。
 
-Tips
+提示
 
-- The remaining budget is shown next to Remaining. Each region pass consumes layers from this budget.
-- Feather controls how soft the selection edge blends into the surrounding area.
-- You can run multiple region passes on the same area for extra refinement.
+- 剩餘預算顯示在「剩餘」旁邊。每個區域輪次都會消耗此預算中的圖層。
+- 羽化控制選擇邊緣與周圍區域混合的柔和程度。
+- 你可以在同一區域執行多個區域輪次以獲得額外的細化效果。
 """,
         "region_paint_tab": "區域繪製",
         "region_step_image": "第 1 步 — 選擇圖片和設定",
@@ -909,29 +909,29 @@ Tips
 - 현재 FH6 주소는 현재 게임 프로세스와 현재 편집기 상태에서만 유효합니다.
 - 앱이 안전한 템플릿을 찾지 못하면 편집기가 열려 있는지, 템플릿이 ungroup 상태인지, 레이어 수가 정확한지 확인하세요.
 
-Region Paint
+영역 페인트
 
-Region Paint lets you iteratively refine specific areas of an image. Instead of generating all layers at once, you generate a base layer pass first, then select regions (faces, details, etc.) and add extra layers only to those areas.
+영역 페인트를 사용하면 이미지의 특정 영역을 반복적으로 세부 조정할 수 있습니다. 모든 레이어를 한 번에 생성하는 대신, 먼저 전체 이미지에 기본 레이어 패스를 생성한 다음 영역(얼굴, 디테일 등)을 선택하여 해당 영역에만 추가 레이어를 적용합니다.
 
-1. Open Region Paint tab. Click Add Image to select a PNG/JPG/BMP.
+1. 영역 페인트 탭을 엽니다. 이미지 추가를 클릭하여 PNG/JPG/BMP를 선택하세요.
 
-2. Choose a Quality Profile — this sets the Total budget (stopAt value from the profile). Adjust First-pass layers (how many layers to generate initially across the whole image) and Region layers (how many to add per selected region).
+2. 품질 프로필을 선택하세요 — 총 예산(프로필의 stopAt 값)이 설정됩니다. 첫 패스 레이어(전체 이미지에 처음 생성할 레이어 수)와 영역 레이어(선택한 영역당 추가할 레이어 수)를 조정하세요.
 
-3. On the Original canvas, use Rectangle or Ellipse tool to draw a selection region. The red overlay shows your selection. Use Clear Mask to remove the selection.
+3. 원본 캔버스에서 사각형 또는 타원 도구를 사용하여 선택 영역을 그립니다. 빨간색 오버레이가 선택을 표시합니다. 마스크 지우기를 사용하여 선택을 제거하세요.
 
-4. Click Start First Pass to generate the base layers. Wait for completion — a preview appears on the right canvas.
+4. 첫 패스 시작을 클릭하여 기본 레이어를 생성합니다. 완료될 때까지 기다리면 오른쪽 캔버스에 미리보기가 나타납니다.
 
-5. Draw a selection region on the left canvas, then click Paint Selected Region to add more layers only inside that region. Repeat for each area you want to refine.
+5. 왼쪽 캔버스에 선택 영역을 그린 다음 선택 영역 페인트를 클릭하여 해당 영역에만 더 많은 레이어를 추가합니다. 세부 조정할 각 영역에 대해 이 과정을 반복하세요.
 
-6. After all passes, use Open Result Folder to find base.json in the output directory, or Save Result JSON to export it to a custom location.
+6. 모든 패스가 끝나면 결과 폴더 열기를 사용하여 출력 디렉토리에서 base.json을 찾거나, 결과 JSON 저장을 사용하여 원하는 위치로 내보내세요.
 
-7. Import the result JSON using the Import tab — same workflow as standard generation.
+7. 가져오기 탭을 사용하여 결과 JSON을 가져옵니다 — 표준 생성과 동일한 워크플로입니다.
 
-Tips
+팁
 
-- The remaining budget is shown next to Remaining. Each region pass consumes layers from this budget.
-- Feather controls how soft the selection edge blends into the surrounding area.
-- You can run multiple region passes on the same area for extra refinement.
+- 남은 예산은 남음 옆에 표시됩니다. 각 영역 패스는 이 예산에서 레이어를 소비합니다.
+- 페더는 선택 가장자리가 주변 영역과 얼마나 부드럽게 혼합되는지 제어합니다.
+- 동일한 영역에서 여러 번의 영역 패스를 실행하여 추가 세부 조정을 할 수 있습니다.
 """,
         "region_paint_tab": "영역 페인트",
         "region_step_image": "1단계 — 이미지 및 프로필 선택",
@@ -1100,29 +1100,29 @@ Notas
 - Las direcciones actuales de FH6 solo son válidas para el proceso actual del juego y el estado actual del editor.
 - Si la app no encuentra una plantilla segura, confirma que el editor esté abierto, que la plantilla esté desagrupada y que la cantidad de capas sea exacta.
 
-Region Paint
+Pintura Regional
 
-Region Paint lets you iteratively refine specific areas of an image. Instead of generating all layers at once, you generate a base layer pass first, then select regions (faces, details, etc.) and add extra layers only to those areas.
+La Pintura Regional permite refinar iterativamente áreas específicas de una imagen. En lugar de generar todas las capas a la vez, primero genera una pasada de capas base en toda la imagen, luego selecciona regiones (rostros, detalles, etc.) y agrega capas adicionales solo en esas áreas.
 
-1. Open Region Paint tab. Click Add Image to select a PNG/JPG/BMP.
+1. Abra la pestaña Pintura Regional. Haga clic en Agregar Imagen para seleccionar un PNG/JPG/BMP.
 
-2. Choose a Quality Profile — this sets the Total budget (stopAt value from the profile). Adjust First-pass layers (how many layers to generate initially across the whole image) and Region layers (how many to add per selected region).
+2. Elija un Perfil de Calidad — esto establece el Presupuesto total (valor stopAt del perfil). Ajuste las Capas de 1ª pasada (cuántas capas generar inicialmente en toda la imagen) y las Capas por región (cuántas agregar por región seleccionada).
 
-3. On the Original canvas, use Rectangle or Ellipse tool to draw a selection region. The red overlay shows your selection. Use Clear Mask to remove the selection.
+3. En el lienzo Original, use la herramienta Rectángulo o Elipse para dibujar una región de selección. La superposición roja muestra su selección. Use Limpiar Máscara para eliminar la selección.
 
-4. Click Start First Pass to generate the base layers. Wait for completion — a preview appears on the right canvas.
+4. Haga clic en Iniciar 1ª Pasada para generar las capas base. Espere a que termine — aparecerá una vista previa en el lienzo derecho.
 
-5. Draw a selection region on the left canvas, then click Paint Selected Region to add more layers only inside that region. Repeat for each area you want to refine.
+5. Dibuje una región de selección en el lienzo izquierdo, luego haga clic en Pintar Región Seleccionada para agregar más capas solo dentro de esa región. Repita para cada área que desee refinar.
 
-6. After all passes, use Open Result Folder to find base.json in the output directory, or Save Result JSON to export it to a custom location.
+6. Después de todas las pasadas, use Abrir Carpeta de Resultados para encontrar base.json en el directorio de salida, o Guardar JSON del Resultado para exportarlo a una ubicación personalizada.
 
-7. Import the result JSON using the Import tab — same workflow as standard generation.
+7. Importe el JSON resultante usando la pestaña Importar — el mismo flujo de trabajo que la generación estándar.
 
-Tips
+Consejos
 
-- The remaining budget is shown next to Remaining. Each region pass consumes layers from this budget.
-- Feather controls how soft the selection edge blends into the surrounding area.
-- You can run multiple region passes on the same area for extra refinement.
+- El presupuesto restante se muestra junto a Restante. Cada pasada regional consume capas de este presupuesto.
+- Suavizado controla qué tan suave se mezcla el borde de la selección con el área circundante.
+- Puede ejecutar múltiples pasadas regionales en la misma área para un refinamiento adicional.
 """,
         "region_paint_tab": "Pintura Regional",
         "region_step_image": "Paso 1 — Elegir imagen y perfil",
