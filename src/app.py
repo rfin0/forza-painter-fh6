@@ -894,6 +894,9 @@ class App:
         self._region_cached_pil = None       # cached full-res PIL image
         self._region_cached_pil_path = None  # path the cached image is for
         self.region_drag_start = None
+        self.region_drag_mode: str | None = None  # "draw", "move", "rotate"
+        self._region_move_snapshot: list[float] | None = None  # original coords when moving
+        self._region_handle_ids: list[int] = []  # tkinter canvas item IDs for rotation handle
         self.region_rubber_id = None
         self.region_poly_points: list[float] = []
         self.region_current_output_dir: str = ""
@@ -1777,47 +1780,125 @@ class App:
                         return i
         return None
 
+    def _region_hit_test_handle(self, x: float, y: float) -> bool:
+        """Return True if point (x, y) is on the rotation handle of the selected shape."""
+        if self.region_selected_index is None or self.region_selected_index >= len(self.region_shapes):
+            return False
+        shape = self.region_shapes[self.region_selected_index]
+        coords = shape.get("coords", [])
+        if len(coords) < 4:
+            return False
+        import math
+        cx = (coords[0] + coords[2]) / 2.0
+        cy = (coords[1] + coords[3]) / 2.0
+        hh = abs(coords[3] - coords[1]) / 2.0
+        rotation = shape.get("rotation", 0)
+        rad = math.radians(rotation)
+        handle_offset = 14
+        hx = cx + math.sin(rad) * (hh + handle_offset)
+        hy = cy - math.cos(rad) * (hh + handle_offset)
+        return math.hypot(x - hx, y - hy) <= 8
+
     def _region_canvas_press(self, event):
         tool = self.region_tool.get()
-        if tool in ("rect", "ellipse"):
-            # First, check if clicking on an existing shape (to select it)
-            hit = self._region_hit_test(event.x, event.y)
-            if hit is not None:
-                self.region_selected_index = hit
-                shape = self.region_shapes[hit]
-                angle = shape.get("rotation", 0)
-                self.region_rotation_var.set(angle)
-                self.region_rotation_display.set(f"{angle}°")
-                self.region_rotation_slider.config(state="normal")
-                self.region_rotation_label.config(state="normal")
-                self.region_drag_start = None
-                self._region_redraw_overlay()
+        if tool not in ("rect", "ellipse"):
+            return
+
+        # 1. If a shape is selected, check for rotation-handle click
+        if self.region_selected_index is not None:
+            if self._region_hit_test_handle(event.x, event.y):
+                self.region_drag_mode = "rotate"
+                self.region_drag_start = (event.x, event.y)
                 return
-            # Click on empty space — deselect and prepare for drag
-            self.region_selected_index = None
-            self.region_rotation_var.set(0)
-            self.region_rotation_display.set("0°")
-            self.region_rotation_slider.config(state="disabled")
-            self.region_rotation_label.config(state="disabled")
+
+        # 2. Check if clicking on any shape body
+        hit = self._region_hit_test(event.x, event.y)
+        if hit is not None:
+            # Select and prepare for move
+            self.region_selected_index = hit
+            shape = self.region_shapes[hit]
+            angle = shape.get("rotation", 0)
+            self.region_rotation_var.set(angle)
+            self.region_rotation_display.set(f"{angle}°")
+            self.region_rotation_slider.config(state="normal")
+            self.region_rotation_label.config(state="normal")
+            self.region_drag_mode = "move"
             self.region_drag_start = (event.x, event.y)
+            self._region_move_snapshot = list(shape["coords"])
             self._region_redraw_overlay()
+            return
+
+        # 3. Click on empty space — deselect and prepare for new-shape drag
+        self.region_selected_index = None
+        self.region_rotation_var.set(0)
+        self.region_rotation_display.set("0°")
+        self.region_rotation_slider.config(state="disabled")
+        self.region_rotation_label.config(state="disabled")
+        self.region_drag_mode = "draw"
+        self.region_drag_start = (event.x, event.y)
+        self._region_redraw_overlay()
 
     def _region_canvas_drag(self, event):
+        import math
+
+        if self.region_drag_mode == "move":
+            if self.region_selected_index is not None and self._region_move_snapshot:
+                dx = event.x - self.region_drag_start[0]
+                dy = event.y - self.region_drag_start[1]
+                orig = self._region_move_snapshot
+                self.region_shapes[self.region_selected_index]["coords"] = [
+                    orig[0] + dx, orig[1] + dy,
+                    orig[2] + dx, orig[3] + dy,
+                ]
+                self._region_redraw_overlay()
+            return
+
+        if self.region_drag_mode == "rotate":
+            if self.region_selected_index is not None:
+                shape = self.region_shapes[self.region_selected_index]
+                coords = shape["coords"]
+                cx = (coords[0] + coords[2]) / 2.0
+                cy = (coords[1] + coords[3]) / 2.0
+                angle = math.degrees(math.atan2(event.x - cx, -(event.y - cy)))
+                angle = round(angle)
+                # Normalize to [-180, 180]
+                angle = ((angle + 180) % 360) - 180
+                shape["rotation"] = angle
+                self.region_rotation_var.set(angle)
+                self.region_rotation_display.set(f"{angle}°")
+                self._region_redraw_overlay()
+            return
+
+        # Draw mode — existing rubberband logic
         tool = self.region_tool.get()
-        if tool == "rect":
-            if self.region_drag_start:
-                x1, y1 = self.region_drag_start
-                if self.region_rubber_id:
-                    self.region_canvas.delete(self.region_rubber_id)
-                self.region_rubber_id = self.region_canvas.create_rectangle(x1, y1, event.x, event.y, outline="#ff4444", dash=(4, 2))
-        elif tool == "ellipse":
-            if self.region_drag_start:
-                x1, y1 = self.region_drag_start
-                if self.region_rubber_id:
-                    self.region_canvas.delete(self.region_rubber_id)
-                self.region_rubber_id = self.region_canvas.create_oval(x1, y1, event.x, event.y, outline="#ff4444", dash=(4, 2))
+        if self.region_drag_start:
+            x1, y1 = self.region_drag_start
+            if self.region_rubber_id:
+                self.region_canvas.delete(self.region_rubber_id)
+            if tool == "rect":
+                self.region_rubber_id = self.region_canvas.create_rectangle(
+                    x1, y1, event.x, event.y, outline="#ff4444", dash=(4, 2))
+            elif tool == "ellipse":
+                self.region_rubber_id = self.region_canvas.create_oval(
+                    x1, y1, event.x, event.y, outline="#ff4444", dash=(4, 2))
 
     def _region_canvas_release(self, event):
+        if self.region_drag_mode == "move":
+            self.region_drag_mode = None
+            self._region_move_snapshot = None
+            self.region_drag_start = None
+            self._region_redraw_overlay()
+            self._region_update_button_states()
+            return
+
+        if self.region_drag_mode == "rotate":
+            self.region_drag_mode = None
+            self.region_drag_start = None
+            self._region_redraw_overlay()
+            self._region_update_button_states()
+            return
+
+        # Draw mode — existing logic
         tool = self.region_tool.get()
         if tool in ("rect", "ellipse") and self.region_drag_start:
             x1, y1 = self.region_drag_start
@@ -1829,6 +1910,7 @@ class App:
                 self.region_rubber_id = None
             self.region_drag_start = None
             self._region_redraw_overlay()
+        self.region_drag_mode = None
         self._region_update_button_states()
 
     def _region_canvas_double_click(self, event):
@@ -1946,8 +2028,31 @@ class App:
         self.region_canvas.delete("all")
         self.region_canvas.create_image(2, 2, anchor="nw", image=self.region_canvas_image_ref)
 
+        # Draw rotation handle on canvas for the selected shape
+        if self.region_selected_index is not None and self.region_selected_index < len(self.region_shapes):
+            shape = self.region_shapes[self.region_selected_index]
+            coords = shape.get("coords", [])
+            if len(coords) >= 4:
+                import math
+                cx = (coords[0] + coords[2]) / 2.0
+                cy = (coords[1] + coords[3]) / 2.0
+                hh = abs(coords[3] - coords[1]) / 2.0
+                rotation = shape.get("rotation", 0)
+                rad = math.radians(rotation)
+                handle_offset = 14
+                hx = cx + math.sin(rad) * (hh + handle_offset)
+                hy = cy - math.cos(rad) * (hh + handle_offset)
+                r = 5
+                lid = self.region_canvas.create_line(cx, cy, hx, hy, fill="#ffff00", width=1, tags=("rot_handle",))
+                cid = self.region_canvas.create_oval(hx - r, hy - r, hx + r, hy + r,
+                                                     fill="#ffff00", outline="#000000", width=1,
+                                                     tags=("rot_handle",))
+                self._region_handle_ids = [lid, cid]
+
     def _region_on_rotation_changed(self, _value=None):
         """Callback when the rotation slider is moved."""
+        if self.region_drag_mode == "rotate":
+            return  # Canvas handle manages rotation; avoid double update
         if self.region_selected_index is not None and self.region_selected_index < len(self.region_shapes):
             angle = int(float(self.region_rotation_var.get()))
             self.region_shapes[self.region_selected_index]["rotation"] = angle
@@ -1962,10 +2067,7 @@ class App:
             raw = self.region_rotation_display.get().replace("°", "").strip()
             angle = int(float(raw))
             angle = max(-180, min(180, angle))
-            self.region_shapes[self.region_selected_index]["rotation"] = angle
             self.region_rotation_var.set(angle)
-            self.region_rotation_display.set(f"{angle}°")
-            self._region_redraw_overlay()
         except (ValueError, TypeError):
             # Restore to current shape's rotation on invalid input
             current = self.region_shapes[self.region_selected_index].get("rotation", 0)
@@ -1999,6 +2101,8 @@ class App:
         self.region_shapes.clear()
         self.region_poly_points.clear()
         self.region_drag_start = None
+        self.region_drag_mode = None
+        self._region_move_snapshot = None
         self.region_selected_index = None
         self.region_rotation_var.set(0)
         self.region_rotation_display.set("0°")
