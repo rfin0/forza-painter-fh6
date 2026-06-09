@@ -20,7 +20,7 @@ import zipfile
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from tkinter import BOTH, BOTTOM, END, LEFT, RIGHT, X, Button, Canvas, Checkbutton, Entry, Frame, IntVar, Label, Listbox, PhotoImage, Spinbox, StringVar, Text, Tk, Toplevel, filedialog, messagebox, ttk
+from tkinter import BOTH, BOTTOM, END, HORIZONTAL, LEFT, RIGHT, TclError, X, Button, Canvas, Checkbutton, Entry, Frame, IntVar, Label, Listbox, PhotoImage, Spinbox, StringVar, Text, Tk, Toplevel, filedialog, messagebox, ttk
 
 import psutil
 
@@ -66,6 +66,9 @@ from app_config import (
 from utils import load_cv2, load_pillow
 
 from i18n import tr
+
+from ui.text_vinyl_compat import TextVinylThemeAdapter
+from ui.text_vinyl_workspace import TextVinylWorkspace
 
 LANGUAGES = { 
     "English": "en",
@@ -464,6 +467,10 @@ def _typecode_preview_shapes(path):
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if not is_typecode_payload(payload):
         return None
+    from pixel_art_geometry import is_scaled_trace_payload, scaled_trace_preview_shapes
+
+    if is_scaled_trace_payload(payload):
+        return scaled_trace_preview_shapes(payload)
     shapes = payload.get("shapes")
     if not isinstance(shapes, list) or not shapes:
         return None
@@ -501,8 +508,18 @@ def _typecode_preview_shapes(path):
         except (TypeError, ValueError):
             data_mask = bool(data[6]) if len(data) >= 7 else False
         is_mask = bool(shape.get("mask") or shape.get("is_mask") or shape.get("isMask") or data_mask)
+        mask_role = shape.get("mask_role")
         if polygons:
-            out.append({"polygons": polygons, "color": rgba, "word": word & 0xFFFF, "type_code": type_code, "mask": is_mask})
+            out.append(
+                {
+                    "polygons": polygons,
+                    "color": rgba,
+                    "word": word & 0xFFFF,
+                    "type_code": type_code,
+                    "mask": is_mask,
+                    "mask_role": mask_role if isinstance(mask_role, str) else None,
+                }
+            )
     return out
 
 
@@ -645,6 +662,8 @@ def render_typecode_json(path, max_size=None):
         for item in shapes:
             r, g, b, a = item["color"]
             if item.get("mask"):
+                if item.get("mask_role") == "boundary":
+                    continue
                 mask = Image.new("L", (render_w, render_h), 0)
                 mask_draw = ImageDraw.Draw(mask)
                 for polygon in item["polygons"]:
@@ -908,6 +927,8 @@ class App:
         self.region_workflow_running = False
         self.region_status = StringVar(value="Ready")
         self.region_progress = StringVar(value="")
+        self.themes = TextVinylThemeAdapter()
+        self.text_vinyl = TextVinylWorkspace(self)
         # Heatmap tab state
         self._region_right_tab: str = "preview"
         self.region_heatmap_ref = None
@@ -945,6 +966,20 @@ class App:
         )
         style.map(
             "Primary.TNotebook.Tab",
+            background=[("selected", Theme.ACCENT_DARK), ("active", Theme.PANEL_ALT)],
+            foreground=[("selected", "#ffffff"), ("active", Theme.TEXT)],
+        )
+        style.configure("Script.TNotebook", background=Theme.BG, borderwidth=0, tabmargins=(0, 0, 0, 0))
+        style.configure(
+            "Script.TNotebook.Tab",
+            padding=(12, 6),
+            font=("Segoe UI", 9, "bold"),
+            background=Theme.PANEL_ALT,
+            foreground=Theme.MUTED,
+            borderwidth=0,
+        )
+        style.map(
+            "Script.TNotebook.Tab",
             background=[("selected", Theme.ACCENT_DARK), ("active", Theme.PANEL_ALT)],
             foreground=[("selected", "#ffffff"), ("active", Theme.TEXT)],
         )
@@ -1048,8 +1083,10 @@ class App:
             return Theme.PANEL
 
     def _label(self, parent, key, **kwargs):
+        theme_role = kwargs.pop("theme_role", None)
         kwargs.setdefault("bg", self._parent_bg(parent))
-        kwargs.setdefault("fg", Theme.TEXT)
+        if "fg" not in kwargs:
+            kwargs["fg"] = self.themes.fg(theme_role) if theme_role else Theme.TEXT
         widget = Label(parent, text=tr(self.lang, key), **kwargs)
         self.translated.append((widget, key, "text"))
         return widget
@@ -1239,22 +1276,181 @@ class App:
         self.process_combo.pack(side=LEFT, padx=8)
         self._button(process_bar, "refresh", self.refresh_processes).pack(side=LEFT)
         Label(process_bar, textvariable=self.status, anchor="e", bg=Theme.BG, fg=Theme.MUTED).pack(side=RIGHT)
+        self._build_main_tabs()
 
+    def _widget_alive(self, widget) -> bool:
+        if widget is None:
+            return False
+        try:
+            return bool(widget.winfo_exists())
+        except (TclError, Exception):
+            return False
+
+    def _bind_wraplength(self, label, container, padding=24, minimum=160):
+        def _on_configure(event=None):
+            if not self._widget_alive(label) or not self._widget_alive(container):
+                return
+            try:
+                width = event.width if event is not None else container.winfo_width()
+                if width > padding + minimum:
+                    label.configure(wraplength=max(minimum, width - padding))
+            except TclError:
+                pass
+
+        container.bind("<Configure>", _on_configure, add="+")
+
+    def _make_vertical_scroll(self, parent):
+        scroll_area = Frame(parent)
+        canvas = Canvas(scroll_area, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(scroll_area, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side=LEFT, fill=BOTH, expand=True)
+        scrollbar.pack(side=RIGHT, fill="y")
+        inner = Frame(canvas)
+        window = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        scroll_region_job = {"id": None}
+
+        def _apply_scroll_region():
+            scroll_region_job["id"] = None
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _update_scroll_region(_event=None):
+            if scroll_region_job["id"] is not None:
+                return
+            scroll_region_job["id"] = canvas.after(LAYOUT_RESIZE_DEBOUNCE_MS, _apply_scroll_region)
+
+        def _match_width(event):
+            canvas.itemconfigure(window, width=max(1, event.width))
+
+        def _mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(_event=None):
+            canvas.bind_all("<MouseWheel>", _mousewheel)
+
+        def _unbind_mousewheel(_event=None):
+            canvas.unbind_all("<MouseWheel>")
+
+        inner.bind("<Configure>", _update_scroll_region)
+        canvas.bind("<Configure>", _match_width)
+        scroll_area.bind("<Enter>", _bind_mousewheel)
+        scroll_area.bind("<Leave>", _unbind_mousewheel)
+        return scroll_area, inner
+
+    def _prepare_sticky_column(self, parent, *, hint_key: str | None = None, scrollable: bool = True):
+        parent.columnconfigure(0, weight=1)
+        row = 0
+        if hint_key:
+            scroll_hint = self._label(parent, hint_key, anchor="w", justify=LEFT, theme_role="hint")
+            scroll_hint.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+            self._bind_wraplength(scroll_hint, parent)
+            row += 1
+        if scrollable:
+            scroll_area, inner = self._make_vertical_scroll(parent)
+            scroll_area.grid(row=row, column=0, sticky="nsew", pady=(0, 8))
+        else:
+            inner = Frame(parent)
+            inner.grid(row=row, column=0, sticky="nsew", pady=(0, 8))
+        parent.rowconfigure(row, weight=1)
+        footer = Frame(parent)
+        footer.grid(row=row + 1, column=0, sticky="ew")
+        return inner, footer
+
+    def _create_paned(self, parent, orient: str, layout_key: str, **pack_kwargs):
+        paned = ttk.PanedWindow(parent, orient=orient)
+        pack_kwargs.setdefault("fill", BOTH)
+        pack_kwargs.setdefault("expand", True)
+        paned.pack(**pack_kwargs)
+        return paned
+
+    def _preview_bounds(self, label=None):
+        label = label or getattr(self, "preview_label", None)
+        if label is None:
+            return PREVIEW_MAX, PREVIEW_MAX
+        try:
+            self.root.update_idletasks()
+            width = label.winfo_width()
+            height = label.winfo_height()
+        except Exception:
+            width = height = 0
+        if width <= 32 or height <= 32:
+            return PREVIEW_MAX, PREVIEW_MAX
+        return max(1, width - 16), max(1, height - 16)
+
+    def _geometry_preview_slot_for_label(self, label) -> str:
+        return f"label:{id(label)}"
+
+    def schedule_geometry_json_preview(self, slot, path, bounds, callback) -> None:
+        if self.closed:
+            return
+
+        def worker():
+            try:
+                data = render_geometry_json(path, bounds)
+            except Exception:
+                data = None
+            if not self.closed:
+                self.root.after(0, lambda: callback(data))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _json_list_display(self, json_path: Path) -> str:
+        return Path(json_path).name
+
+    def _copy_to_clipboard(self, text: str):
+        try:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(text)
+            self.root.update_idletasks()
+            self.log_line(tr(self.lang, "colors_copied"))
+        except Exception as exc:
+            self.log_line(tr(self.lang, "log_clipboard_failed").format(error=exc))
+
+    def add_text_import_paths(self, paths, *, navigate: bool = False) -> int:
+        normalized = [Path(raw) for raw in paths]
+        added = self._add_json_paths(normalized)
+        if added and normalized:
+            self._render_lists()
+            if self.json_list.size() > 0:
+                self.json_list.selection_clear(0, END)
+                self.json_list.selection_set(self.json_list.size() - 1)
+            self.show_json_preview(normalized[-1])
+        if navigate and added:
+            self.tabs.select(self.import_tab)
+        return added
+
+    def _on_text_tab_changed(self, _event=None):
+        if not hasattr(self, "text_vinyl_tab"):
+            return
+        try:
+            if self.tabs.select() == str(self.text_vinyl_tab):
+                self.text_vinyl.on_tab_activated()
+        except Exception:
+            pass
+
+    def _build_text_vinyl_tab(self):
+        self.text_vinyl.build(self.text_vinyl_tab)
+
+    def _build_main_tabs(self):
         self.tabs = ttk.Notebook(self.root, style="Primary.TNotebook")
         self.generate_tab = Frame(self.tabs)
         self.import_tab = Frame(self.tabs)
         self.export_tab = Frame(self.tabs)
+        self.text_vinyl_tab = Frame(self.tabs)
         self.region_paint_tab = Frame(self.tabs)
         self.tutorial_tab = Frame(self.tabs)
         self.tabs.add(self.generate_tab, text=tr(self.lang, "generate_tab"))
         self.tabs.add(self.import_tab, text=tr(self.lang, "import_tab"))
         self.tabs.add(self.export_tab, text=tr(self.lang, "export_tab"))
         self.tabs.add(self.region_paint_tab, text=tr(self.lang, "region_paint_tab"))
+        self.tabs.add(self.text_vinyl_tab, text=tr(self.lang, "text_tab"))
         self.tabs.add(self.tutorial_tab, text=tr(self.lang, "tutorial_tab"))
 
         self._build_generate_tab()
         self._build_import_tab()
         self._build_export_tab()
+        self._build_text_vinyl_tab()
         self._build_region_paint_tab()
         self._build_tutorial_tab()
         # Pack log area BEFORE Notebook so side=BOTTOM widgets claim space first
@@ -1262,7 +1458,12 @@ class App:
         # Notebook fills remaining space between header/process-bar and log area
         self.tabs.pack(fill=BOTH, expand=True, padx=14, pady=(0, 8))
         self._apply_dark_theme_recursive(self.root)
-        self.tabs.bind("<<NotebookTabChanged>>", self._schedule_preview_refresh)
+        self.tabs.bind("<<NotebookTabChanged>>", self._on_main_tab_changed)
+        self.text_vinyl.refresh_fonts(full_rescan=False)
+
+    def _on_main_tab_changed(self, _event=None):
+        self._schedule_preview_refresh()
+        self._on_text_tab_changed()
 
     def _build_generate_tab(self):
         self._build_market_banner(self.generate_tab)
@@ -2897,6 +3098,10 @@ class App:
         self.tabs.tab(self.generate_tab, text=tr(self.lang, "generate_tab"))
         self.tabs.tab(self.import_tab, text=tr(self.lang, "import_tab"))
         self.tabs.tab(self.export_tab, text=tr(self.lang, "export_tab"))
+        if hasattr(self, "text_vinyl_tab"):
+            self.tabs.tab(self.text_vinyl_tab, text=tr(self.lang, "text_tab"))
+        if hasattr(self, "region_paint_tab"):
+            self.tabs.tab(self.region_paint_tab, text=tr(self.lang, "region_paint_tab"))
         self.tabs.tab(self.tutorial_tab, text=tr(self.lang, "tutorial_tab"))
         if self.photo is None:
             self.preview_label.config(text=tr(self.lang, "preview_hint"))
@@ -2910,6 +3115,9 @@ class App:
             self.full_shape_notes.insert(END, tr(self.lang, "full_shape_notes"))
             self.full_shape_notes.config(state="disabled")
         self._update_tutorial()
+        if hasattr(self, "text_vinyl"):
+            self.text_vinyl.on_language_changed()
+            self.text_vinyl.update_theme_hints()
         self.status.set(tr(self.lang, "ready"))
 
     def _update_tutorial(self):
@@ -4863,6 +5071,48 @@ class App:
                     self.region_progress.set(result.get("error", "Unknown error"))
                     self.log_line(f"Region Paint: failed — {result.get('error', 'Unknown error')}")
                 self._region_update_button_states()
+            elif kind == "text_json_done":
+                shape_mode = None
+                extra_shapes = False
+                if len(payload) >= 4:
+                    json_payload, output, shape_mode, extra_shapes = (
+                        payload[0],
+                        payload[1],
+                        payload[2],
+                        payload[3],
+                    )
+                elif len(payload) >= 3:
+                    json_payload, output, shape_mode = payload[0], payload[1], payload[2]
+                elif len(payload) >= 2:
+                    json_payload, output = payload[0], payload[1]
+                else:
+                    continue
+                self.text_vinyl.finish_json(
+                    json_payload,
+                    output,
+                    shape_mode=shape_mode,
+                    extra_shapes=bool(extra_shapes),
+                )
+            elif kind == "text_layer_estimate":
+                self.text_vinyl.handle_layer_estimate(payload)
+            elif kind == "text_cell_size_applied":
+                self.text_vinyl.text_cell_size.set(str(payload))
+                self.text_vinyl.app.log_line(
+                    self.text_vinyl._tr("text_log_cell_size_adjusted").format(cell=payload)
+                )
+            elif kind == "text_coverage_ready":
+                self.text_vinyl.handle_coverage_ready(payload)
+            elif kind == "text_fonts_ready":
+                if len(payload) >= 3:
+                    fonts_by_script, merge, log = payload[0], bool(payload[1]), bool(payload[2])
+                elif len(payload) >= 2:
+                    fonts_by_script, merge, log = payload[0], bool(payload[1]), True
+                else:
+                    fonts_by_script, merge, log = payload, True, True
+                self.text_vinyl.apply_fonts_by_script(fonts_by_script, merge=merge, log=log)
+            elif kind == "text_fonts_scan_done":
+                self.text_vinyl._fonts_scanning = False
+                self.text_vinyl._set_font_refresh_enabled(True)
             elif kind == "region_canvas_update":
                 self._region_display_image(payload)
         if not self.closed:

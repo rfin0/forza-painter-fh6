@@ -1349,6 +1349,24 @@ TYPECODE_TEXT = {
 for _lang, _items in TYPECODE_TEXT.items():
     TEXT.setdefault(_lang, {}).update(_items)
 
+from text_vinyl_i18n_en import TEXT_VINYL_EN
+from text_vinyl_i18n_locales import TEXT_VINYL_BY_LANG
+
+TEXT["en"].update(TEXT_VINYL_EN)
+for _lang, _items in TEXT_VINYL_BY_LANG.items():
+    TEXT.setdefault(_lang, {}).update(_items)
+
+
+def ui_font_name(lang: str) -> str:
+    """Return a UI font family with reliable glyphs for the active locale."""
+    if lang == "ja":
+        return "Yu Gothic UI"
+    if lang in ("zh", "zh-tw"):
+        return "Microsoft YaHei UI"
+    if lang == "ko":
+        return "Malgun Gothic"
+    return "Segoe UI"
+
 
 def tr(lang: str, key: str) -> str:
     """Return the translation for *key* in *lang*, falling back to English."""
