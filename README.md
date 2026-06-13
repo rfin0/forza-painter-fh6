@@ -19,6 +19,12 @@
   <code>v1.8.4</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
+<p align="center">
+  <a href="https://github.com/bvzrays/forza-painter-fh6/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=bvzrays/forza-painter-fh6" alt="Contributors" />
+  </a>
+</p>
+
 Convert PNG/JPG/BMP images into Forza Horizon 6 Vinyl Group layers. The app handles generation, preview, and import in one desktop window; normal users do not need Python, `.venv`, batch files, or manual memory addresses.
 
 > **Download the EXE:** get `forza-painter-fh6-v1.8.4.exe` from [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) and run it directly.
