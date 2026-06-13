@@ -18,6 +18,12 @@
   <code>v1.8.4</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
+<p align="center">
+  <a href="https://github.com/bvzrays/forza-painter-fh6/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=bvzrays/forza-painter-fh6" alt="Contributors" />
+  </a>
+</p>
+
 PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니다. 앱에서 생성, 미리보기, 가져오기를 한 번에 처리하며 일반 사용자는 Python, `.venv`, 배치 파일, 메모리 주소 입력이 필요 없습니다.
 
 > **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.8.4.exe`를 내려받아 바로 실행하세요.
