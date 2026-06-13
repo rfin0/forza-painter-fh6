@@ -34,6 +34,7 @@ from fh6_vinyl_resources import load_vinyl_polygons
 from game_profiles import PROFILES
 from geometry_json import RECTANGLE, ROTATED_ELLIPSE, load_normalized_geometry
 from generator_backend import GENERATOR_EXE, GENERATOR_JSON_SCAN_SECONDS, GENERATOR_POLL_SLEEP_SECONDS, GENERATOR_PREVIEW_SCAN_SECONDS, USER_SETTINGS_DIR, best_geometry_jsons, build_generator_command, build_generator_env, generated_jsons, generated_preview_files, generator_preview_path, load_settings, preprocess_input_image, write_custom_settings, write_user_settings_preset
+from region_painter.state_manager import StateManager
 from region_painter.workflow import (
     finalize_first_pass,
     finalize_region_pass,
@@ -1530,6 +1531,7 @@ class App:
             btn.pack(side=LEFT, padx=2)
             self.translated.append((btn, key, "text"))
         self._button(tool_row, "region_tool_clear", self._region_clear_mask).pack(side=LEFT, padx=(8, 2))
+        self._button(tool_row, "region_tool_clear_selected", self._region_clear_selected_mask).pack(side=LEFT, padx=2)
 
         # Rotation control (visible when a shape is selected)
         rot_row = Frame(step3)
@@ -1552,6 +1554,20 @@ class App:
         self.region_rotation_label.pack(side=LEFT)
         self.region_rotation_label.bind("<Return>", self._region_rotation_entry_apply)
         self.region_rotation_label.bind("<FocusOut>", self._region_rotation_entry_apply)
+
+        # Duplicate result buttons inside scrollable area for small screens
+        hint_row = Frame(step3)
+        hint_row.pack(fill=X, padx=10, pady=(2, 0))
+        hint_label = Label(hint_row, text=tr(self.lang, "region_small_screen_hint"),
+                           bg=self._parent_bg(hint_row), fg=Theme.MUTED, font=("Segoe UI", 8))
+        hint_label.pack(side=LEFT)
+        self.translated.append((hint_label, "region_small_screen_hint", "text"))
+        dup_row = Frame(step3)
+        dup_row.pack(fill=X, padx=10, pady=(2, 6))
+        self.region_open_folder_btn2 = self._button(dup_row, "region_open_result_folder", self._region_open_result_folder, state="disabled")
+        self.region_open_folder_btn2.pack(side=LEFT, fill=X, expand=True)
+        self.region_save_json_btn2 = self._button(dup_row, "region_save_result_json", self._region_save_result_json, state="disabled")
+        self.region_save_json_btn2.pack(side=LEFT, padx=6, fill=X, expand=True)
 
         # Step 4 — Actions
         step4 = ttk.LabelFrame(left_outer, text=tr(self.lang, "region_step_actions"))
@@ -2009,6 +2025,9 @@ class App:
             x1, y1 = self.region_drag_start
             x2, y2 = event.x, event.y
             if abs(x2 - x1) > 3 and abs(y2 - y1) > 3:
+                # Normalize so x1<=x2, y1<=y2 regardless of drag direction
+                x1, x2 = min(x1, x2), max(x1, x2)
+                y1, y2 = min(y1, y2), max(y1, y2)
                 self.region_shapes.append({"tool": tool, "coords": [x1, y1, x2, y2], "rotation": 0})
             if self.region_rubber_id:
                 self.region_canvas.delete(self.region_rubber_id)
@@ -2253,6 +2272,24 @@ class App:
             self._region_display_image(self.region_images[0])
         self._region_update_button_states()
 
+    def _region_clear_selected_mask(self):
+        """Clear only the currently selected mask shape."""
+        if self.region_selected_index is None:
+            self.log_line("Region Paint: No mask selected. Click a mask on the canvas to select it first.")
+            return
+        idx = self.region_selected_index
+        if idx < 0 or idx >= len(self.region_shapes):
+            self.log_line("Region Paint: Selected mask no longer exists.")
+            return
+        del self.region_shapes[idx]
+        self.region_selected_index = None
+        self.region_rotation_var.set(0)
+        self.region_rotation_display.set("0°")
+        self.region_rotation_slider.config(state="disabled")
+        self.region_rotation_label.config(state="disabled")
+        self._region_redraw_overlay()
+        self._region_update_button_states()
+
     def _region_generate_mask(self) -> "Image.Image | None":
         """Convert canvas shapes to a PIL 'L' mask at working resolution."""
         if not self.region_shapes or not self.region_images:
@@ -2281,8 +2318,11 @@ class App:
         self.region_first_pass_btn.config(state="normal" if has_image and not running else "disabled")
         self.region_paint_btn.config(state="normal" if has_image and has_shapes and not running else "disabled")
         self.region_stop_btn.config(state="normal" if running else "disabled")
-        self.region_open_folder_btn.config(state="normal" if has_output and not running else "disabled")
-        self.region_save_json_btn.config(state="normal" if has_output and not running else "disabled")
+        enabled = "normal" if has_output and not running else "disabled"
+        self.region_open_folder_btn.config(state=enabled)
+        self.region_save_json_btn.config(state=enabled)
+        self.region_open_folder_btn2.config(state=enabled)
+        self.region_save_json_btn2.config(state=enabled)
         # Heatmap tab: only clickable when a heatmap exists
         has_heatmap = bool(self._region_heatmap_showing)
         if self.region_tab_heatmap_btn:
@@ -2374,6 +2414,9 @@ class App:
             first_layers = int(self.region_first_var.get() or 1000)
         except ValueError:
             self.log_line("Invalid budget values.")
+            return
+        if first_layers > total_budget:
+            self.log_line(f"Region Paint: First-pass layers ({first_layers}) exceed total budget ({total_budget}). Please adjust the values.")
             return
         output_dir = ROOT / "runtime" / "region-painter" / f"{image_path.stem}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         self.region_current_output_dir = str(output_dir)
@@ -2525,6 +2568,10 @@ class App:
         except ValueError:
             region_layers = 300
         output_dir = Path(self.region_current_output_dir)
+        state = StateManager(output_dir)
+        if state.is_first_pass_done and state.used_layers + region_layers > state.total_budget:
+            self.log_line(f"Region Paint: Current layers ({state.used_layers}) + region layers ({region_layers}) exceed total budget ({state.total_budget}). Please adjust the values.")
+            return
         self.region_workflow_running = True
         self._region_update_button_states()
         self.region_status.set(tr(self.lang, "running"))
