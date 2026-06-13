@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_char_libraries import (
+from text.char_libraries import (
     GRID_COLUMNS,
     LIBRARY_HANZI,
     LIBRARY_HANGUL,

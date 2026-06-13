@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Sequence, Tuple
 
-from fh6_layer_masks import MASK_ROLE_POLISH, make_fh6_mask_shape
+from text.layer_masks import MASK_ROLE_POLISH, make_fh6_mask_shape
 
 Rect = Tuple[int, int, int, int]
 
@@ -34,7 +34,7 @@ def build_overflow_bitmap(ideal_mask, coverage_mask, *, margin: int = 0):
     ideal = ideal_mask.convert("L")
     coverage = coverage_mask.convert("L")
     if margin > 0:
-        from text_geometry import normalize_trace_cell_size
+        from text.geometry import normalize_trace_cell_size
 
         shrink = max(1, normalize_trace_cell_size(margin))
         eroded = Image.new("L", (width, height), 0)
@@ -83,7 +83,7 @@ def build_polish_mask_rectangles(
     overflow = build_overflow_bitmap(ideal_mask, coverage, margin=margin)
     if overflow.getextrema()[1] <= 0:
         return []
-    from text_geometry import decompose_mask_to_rectangles, normalize_trace_cell_size
+    from text.geometry import decompose_mask_to_rectangles, normalize_trace_cell_size
 
     return decompose_mask_to_rectangles(overflow, cell_size=normalize_trace_cell_size(polish_cell_size))
 

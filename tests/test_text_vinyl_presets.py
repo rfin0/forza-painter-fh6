@@ -1,7 +1,7 @@
 """Text vinyl preset definitions aligned with bvzrays import defaults."""
 
-from text_geometry import SHAPE_MODE_ELLIPSES, SHAPE_MODE_RECTANGLES
-from text_vinyl_presets import (
+from text.geometry import SHAPE_MODE_ELLIPSES, SHAPE_MODE_RECTANGLES
+from text.presets import (
     CJK_DEFAULT_PRESET_ID,
     DEFAULT_MAX_DRAWABLE_LAYERS,
     UI_PRESET_ORDER,

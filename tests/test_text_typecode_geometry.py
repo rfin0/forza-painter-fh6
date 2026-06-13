@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_geometry import (
+from text.geometry import (
     SHAPE_MODE_CIRCLES,
     SHAPE_MODE_ELLIPSES,
     SHAPE_MODE_RECTANGLES,
@@ -132,7 +132,7 @@ def test_text_shape_mode_ui_choices_are_rectangles_ellipses_circles() -> None:
 
 
 def test_text_trace_method_ui_choices() -> None:
-    from text_geometry import (
+    from text.geometry import (
         TRACE_METHOD_BARS_FULL,
         TRACE_METHOD_BARS_SKELETON,
         TRACE_METHOD_GRID,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List
 
-from text_geometry import (
+from text.geometry import (
     SHAPE_MODE_ELLIPSES,
     SHAPE_MODE_RECTANGLES,
 )

@@ -7,14 +7,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_geometry import (
+from text.geometry import (
     SHAPE_MODE_RECTANGLES,
     SHAPE_MODE_STROKES,
     build_typecode_payload_from_mask,
     estimate_traced_text_layers,
     normalize_text_shape_mode,
 )
-from text_stroke_trace import (
+from text.stroke_trace import (
     STROKE_COORDINATE_MODEL,
     _mask_pixels,
     _prepare_mask,
@@ -31,7 +31,7 @@ def test_normalize_strokes_mode() -> None:
 
 def test_skeleton_trace_method_uses_stroke_payload() -> None:
     from PIL import Image
-    from text_geometry import TRACE_METHOD_BARS_SKELETON
+    from text.geometry import TRACE_METHOD_BARS_SKELETON
 
     mask = Image.new("L", (8, 24), 0)
     for y in range(4, 20):
@@ -78,7 +78,7 @@ def test_stroke_l_shape_uses_low_rotation() -> None:
 
 def test_stroke_walker_fewer_than_grid_trace() -> None:
     try:
-        from text_fonts import find_font_for_text
+        from text.fonts import find_font_for_text
     except Exception:
         return
     font = find_font_for_text("WALKER")
@@ -104,8 +104,8 @@ def test_stroke_walker_fewer_than_grid_trace() -> None:
 
 def test_stroke_walker_covers_most_pixels() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
     except Exception:
         return
     font = find_font_for_text("WALKER")
@@ -121,8 +121,8 @@ def test_stroke_walker_covers_most_pixels() -> None:
 
 def test_walker_splits_into_letters() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
     except Exception:
         return
     font = find_font_for_text("WALKER")
@@ -137,15 +137,15 @@ def test_walker_splits_into_letters() -> None:
 
 def test_overlap_mode_fewer_layers_than_grid_for_latin() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import (
+        from text.fonts import find_font_for_text
+        from text.geometry import (
             TRACE_METHOD_BARS_FULL,
             TRACE_METHOD_BARS_SKELETON,
             decompose_mask_to_rectangles,
             render_text_mask,
             trace_uses_stroke_fitting,
         )
-        from text_stroke_trace import count_stroke_layers_from_mask
+        from text.stroke_trace import count_stroke_layers_from_mask
     except Exception:
         return
     font = find_font_for_text("Æ")
@@ -168,9 +168,9 @@ def _nearest_cardinal_angle(rotation_deg: float) -> float:
 
 def test_overlap_latin_string_uses_cardinal_angles_only() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
-        from text_stroke_trace import count_stroke_layers_from_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
+        from text.stroke_trace import count_stroke_layers_from_mask
     except Exception:
         return
     sample = "ÆVEXMLIi7"
@@ -189,8 +189,8 @@ def test_overlap_latin_string_uses_cardinal_angles_only() -> None:
 
 def test_overlap_mode_skips_grid_fallback_slivers() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
     except Exception:
         return
     font = find_font_for_text("ÆVEXMLIi7")
@@ -206,8 +206,8 @@ def test_overlap_mode_skips_grid_fallback_slivers() -> None:
 
 def test_overlap_skeleton_covers_most_pixels() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
     except Exception:
         return
     font = find_font_for_text("ÆVEXMLIi7")
@@ -224,8 +224,8 @@ def test_overlap_skeleton_covers_most_pixels() -> None:
 
 def test_stroke_bars_are_elongated_not_square_slabs() -> None:
     try:
-        from text_fonts import find_font_for_text
-        from text_geometry import render_text_mask
+        from text.fonts import find_font_for_text
+        from text.geometry import render_text_mask
     except Exception:
         return
     font = find_font_for_text("WALKER")

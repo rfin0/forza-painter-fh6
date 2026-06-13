@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from typing import Sequence, TypedDict
 
-from text_fonts import (
+from text.fonts import (
     SCRIPT_CHINESE,
     SCRIPT_JAPANESE,
     SCRIPT_KOREAN,

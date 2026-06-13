@@ -7,12 +7,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_curved_trace import (
+from text.curved_trace import (
     build_curved_typecode_shapes,
     extra_shape_type_codes,
     find_convex_corners,
 )
-from text_geometry import TEXT_TYPECODE_FORMAT, build_typecode_payload_from_mask
+from text.geometry import TEXT_TYPECODE_FORMAT, build_typecode_payload_from_mask
 
 
 def test_extra_shape_type_codes_load() -> None:

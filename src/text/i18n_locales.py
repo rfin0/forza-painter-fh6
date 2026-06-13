@@ -4,9 +4,13 @@ TEXT_VINYL_ES = {
     "text_tab": "Texto",
     "text_tab_hint": "Escribe texto, elige una fuente y genera. Las vistas previas están a la derecha.",
     "text_import_shape_notice": (
-        "El texto puede usar formas que no sean círculos. Aun así, usa círculos en el Editor de diseños de FH6. "
-        "Tras importar correctamente, el texto puede parecer hecho con círculos. Guarda el vinilo y recárgalo; "
-        "debería verse igual que en la vista previa."
+        "El JSON de texto puede usar cuadrados, rectángulos o curvas. En FH6, usa una plantilla circular "
+        "(esfera) blanca sin agrupar con suficientes capas para tu JSON. Tras importar, el diseño puede verse "
+        "circular hasta que guardes y vuelvas a abrir el vinilo; es un comportamiento normal de FH6, no un fallo."
+    ),
+    "text_import_reload_reminder": (
+        "El resultado de la importación puede no coincidir con la vista previa. Guarda y vuelve a abrir el vinilo "
+        "para asegurar una importación correcta."
     ),
     "text_dismiss_notice": "Descartar",
     "text_import_shape_notice_show": "Nota sobre formas al importar",
@@ -63,7 +67,11 @@ TEXT_VINYL_ES = {
     "text_trace_active_summary_bars_full": "Activo: barras rotadas (relleno completo) · tamaño de celda no usado",
     "text_trace_active_summary_bars_skeleton": "Activo: barras rotadas (esqueleto) · tamaño de celda no usado",
     "text_trace_active_summary_extra": "Activo: formas extra (curvas) · tamaño de celda {cell}",
-    "text_template_hint": "Para Importar: usa una plantilla nueva de círculo blanco sin agrupar (guardar, reabrir, desagrupar) con una cantidad de capas igual a tu JSON. El modo de forma de trazado solo afecta las primitivas generadas, no la plantilla.",
+    "text_template_hint": (
+        "Para Importar: usa una plantilla circular blanca sin agrupar (guardar, reabrir, desagrupar) con capas "
+        "igual a tu JSON. Si el texto usa cuadrados o rectángulos, puede verse circular en el juego hasta que "
+        "guardes y vuelvas a abrir el vinilo."
+    ),
     "text_cell_hint": "Los valores más altos fusionan más píxeles en cada forma, lo que usa menos capas de vinilo pero se ve más cuadriculado.",
     "text_preset": "Preset de calidad",
     "text_preset_custom": "Personalizado (configuración manual)",
@@ -182,9 +190,13 @@ TEXT_VINYL_PT_BR = {
     "text_tab": "Texto",
     "text_tab_hint": "Digite o texto, escolha uma fonte e gere. As pré-visualizações ficam à direita.",
     "text_import_shape_notice": (
-        "O texto pode usar formas que não sejam círculos. Mesmo assim, use círculos no Editor de Designs do FH6. "
-        "Depois de importar com sucesso, o texto pode parecer usar círculos. Salve o vinil e recarregue; "
-        "ele deve aparecer como na pré-visualização."
+        "O JSON de texto pode usar quadrados, retângulos ou curvas. No FH6, use um modelo circular "
+        "(esfera) branco desagrupado com camadas suficientes para o seu JSON. Após importar, o design pode "
+        "parecer circular até você salvar e reabrir o vinil — comportamento normal do FH6, não uma falha."
+    ),
+    "text_import_reload_reminder": (
+        "O resultado da importação pode não corresponder à pré-visualização. Salve e reabra o vinil para "
+        "garantir a importação correta."
     ),
     "text_dismiss_notice": "Dispensar",
     "text_import_shape_notice_show": "Nota de formas para importação",
@@ -241,7 +253,11 @@ TEXT_VINYL_PT_BR = {
     "text_trace_active_summary_bars_full": "Ativo: barras rotacionadas (preenchimento completo) · tamanho da célula não usado",
     "text_trace_active_summary_bars_skeleton": "Ativo: barras rotacionadas (esqueleto) · tamanho da célula não usado",
     "text_trace_active_summary_extra": "Ativo: formas extras (curvas) · tamanho da célula {cell}",
-    "text_template_hint": "Para Importar: use um modelo novo de círculo branco desagrupado (salvar, reabrir, desagrupar) com contagem de camadas igual ao seu JSON. O modo de forma de traçado só afeta as primitivas geradas, não o modelo.",
+    "text_template_hint": (
+        "Para Importar: use um modelo circular branco desagrupado (salvar, reabrir, desagrupar) com contagem "
+        "de camadas igual ao seu JSON. Se o texto usar quadrados ou retângulos, pode parecer circular no jogo "
+        "até você salvar e reabrir o vinil."
+    ),
     "text_cell_hint": "Valores maiores mesclam mais pixels em cada forma, usando menos camadas de vinil, mas ficando mais blocado.",
     "text_preset": "Predefinição de qualidade",
     "text_preset_custom": "Personalizado (configurações manuais)",
@@ -360,9 +376,11 @@ TEXT_VINYL_ZH = {
     "text_tab": "文本",
     "text_tab_hint": "输入文本、选择字体，然后生成。预览显示在右侧。",
     "text_import_shape_notice": (
-        "文本可能使用圆形以外的形状。即便如此，请在 FH6 Design Editor 中使用圆形。"
-        "成功导入后，文本可能看起来仍像使用圆形。保存 vinyl 后重新载入，"
-        "应该会显示为预览中的效果。"
+        "文本 JSON 可能包含方形、矩形或曲线。在 FH6 中，请使用与 JSON 层数匹配的新未分组白色圆形（球体）模板。"
+        "导入后，图案在游戏里可能暂时显示为圆形，保存并重新打开贴膜组后即正常——这是 FH6 的预期行为，不是导入失败。"
+    ),
+    "text_import_reload_reminder": (
+        "导入结果可能与预览不一致。请保存并重新打开贴膜组以确保正确导入。"
     ),
     "text_dismiss_notice": "关闭",
     "text_import_shape_notice_show": "显示导入形状说明",
@@ -419,7 +437,10 @@ TEXT_VINYL_ZH = {
     "text_trace_active_summary_bars_full": "当前：旋转条（完整填充）· 不使用单元大小",
     "text_trace_active_summary_bars_skeleton": "当前：旋转条（骨架）· 不使用单元大小",
     "text_trace_active_summary_extra": "当前：额外形状（曲线）· 单元大小 {cell}",
-    "text_template_hint": "用于导入：使用新的未分组白色圆形模板（保存、重开、取消分组），其层数要与 JSON 匹配。描摹形状模式只影响生成的基元，不影响模板。",
+    "text_template_hint": (
+        "用于导入：使用新的未分组白色圆形模板（保存、重开、取消分组），其层数要与 JSON 匹配。"
+        "若文本使用方形或矩形，导入后在游戏里可能暂时显示为圆形，保存并重新打开贴膜组即可。"
+    ),
     "text_cell_hint": "数值越大，每个形状会合并更多像素，vinyl 层数更少，但画面更块状。",
     "text_preset": "品质预设",
     "text_preset_custom": "自定义（手动设置）",
@@ -538,9 +559,11 @@ TEXT_VINYL_ZH_TW = {
     "text_tab": "文字",
     "text_tab_hint": "輸入文字、選擇字型，然後產生。預覽會顯示在右側。",
     "text_import_shape_notice": (
-        "文字可能使用圓形以外的形狀。即便如此，請在 FH6 Design Editor 中使用圓形。"
-        "成功匯入後，文字可能看起來仍像使用圓形。儲存 vinyl 後重新載入，"
-        "應該會顯示為預覽中的效果。"
+        "文字 JSON 可能包含方形、矩形或曲線。在 FH6 中，請使用與 JSON 圖層數匹配的新未群組白色圓形（球體）模板。"
+        "匯入後，圖案在遊戲裡可能暫時顯示為圓形，儲存並重新開啟貼膜群組後即正常——這是 FH6 的預期行為，不是匯入失敗。"
+    ),
+    "text_import_reload_reminder": (
+        "匯入結果可能與預覽不一致。請儲存並重新開啟貼膜群組以確保正確匯入。"
     ),
     "text_dismiss_notice": "關閉",
     "text_import_shape_notice_show": "顯示匯入形狀說明",
@@ -597,7 +620,10 @@ TEXT_VINYL_ZH_TW = {
     "text_trace_active_summary_bars_full": "目前：旋轉條（完整填充）· 不使用單元大小",
     "text_trace_active_summary_bars_skeleton": "目前：旋轉條（骨架）· 不使用單元大小",
     "text_trace_active_summary_extra": "目前：額外形狀（曲線）· 單元大小 {cell}",
-    "text_template_hint": "用於匯入：使用新的未群組白色圓形模板（儲存、重開、取消群組），其圖層數要與 JSON 匹配。描摹形狀模式只影響產生的基元，不影響模板。",
+    "text_template_hint": (
+        "用於匯入：使用新的未群組白色圓形模板（儲存、重開、取消群組），其圖層數要與 JSON 匹配。"
+        "若文字使用方形或矩形，匯入後在遊戲裡可能暫時顯示為圓形，儲存並重新開啟貼膜群組即可。"
+    ),
     "text_cell_hint": "數值越大，每個形狀會合併更多像素，vinyl 圖層數更少，但畫面更塊狀。",
     "text_preset": "品質預設",
     "text_preset_custom": "自訂（手動設定）",
@@ -716,9 +742,12 @@ TEXT_VINYL_KO = {
     "text_tab": "텍스트",
     "text_tab_hint": "텍스트를 입력하고 글꼴을 선택한 뒤 생성하세요. 미리보기는 오른쪽에 표시됩니다.",
     "text_import_shape_notice": (
-        "텍스트는 원 이외의 도형을 사용할 수 있습니다. 그래도 FH6 디자인 편집기에서는 원을 사용하세요. "
-        "가져오기에 성공한 뒤 텍스트가 원으로 보일 수 있습니다. 비닐을 저장하고 다시 불러오면 "
-        "미리보기와 같은 모습으로 표시됩니다."
+        "텍스트 JSON에는 사각형, 직사각형 또는 곡선이 포함될 수 있습니다. FH6에서는 JSON 레이어 수에 맞는 "
+        "새 그룹 해제 흰색 원(구) 템플릿을 사용하세요. 가져온 직후 게임 안에서는 원처럼 보일 수 있으며, "
+        "비닐 그룹을 저장하고 다시 열면 정상입니다. 이는 FH6의 정상 동작이며 가져오기 실패가 아닙니다."
+    ),
+    "text_import_reload_reminder": (
+        "가져오기 결과가 미리보기와 다를 수 있습니다. 올바른 가져오기를 위해 비닐을 저장한 뒤 다시 여세요."
     ),
     "text_dismiss_notice": "닫기",
     "text_import_shape_notice_show": "가져오기 도형 안내",
@@ -775,7 +804,10 @@ TEXT_VINYL_KO = {
     "text_trace_active_summary_bars_full": "활성: 회전 막대(전체 채우기) · 셀 크기 사용 안 함",
     "text_trace_active_summary_bars_skeleton": "활성: 회전 막대(스켈레톤) · 셀 크기 사용 안 함",
     "text_trace_active_summary_extra": "활성: 추가 도형(곡선) · 셀 크기 {cell}",
-    "text_template_hint": "가져오기용: JSON과 레이어 수가 맞는 새 그룹 해제 흰색 원 템플릿을 사용하세요(저장, 다시 열기, 그룹 해제). 추적 도형 모드는 생성된 기본형에만 영향을 주며 템플릿에는 영향을 주지 않습니다.",
+    "text_template_hint": (
+        "가져오기용: JSON과 레이어 수가 맞는 새 그룹 해제 흰색 원 템플릿을 사용하세요(저장, 다시 열기, 그룹 해제). "
+        "텍스트가 사각형이나 직사각형이면 게임 안에서 원처럼 보일 수 있으며, 비닐 그룹을 저장하고 다시 열면 됩니다."
+    ),
     "text_cell_hint": "값이 클수록 더 많은 픽셀이 하나의 도형으로 병합되어 비닐 레이어는 줄지만 더 블록처럼 보입니다.",
     "text_preset": "품질 프리셋",
     "text_preset_custom": "사용자 지정(수동 설정)",

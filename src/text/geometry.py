@@ -13,8 +13,8 @@ from typing import List, Sequence, Tuple
 
 from geometry_json import RECTANGLE, ROTATED_ELLIPSE, normalize_geometry_payload
 from security_policy import MAX_GEOMETRY_SHAPES, MAX_IMAGE_DIMENSION
-from mandarin_chars import is_cjk_char, is_hangul_char
-from text_fonts import find_cjk_font, find_font_for_text, format_missing_chars, validate_text_coverage
+from text.mandarin_chars import is_cjk_char, is_hangul_char
+from text.fonts import find_cjk_font, find_font_for_text, format_missing_chars, validate_text_coverage
 
 ColorRGBA = Tuple[int, int, int, int]
 Rect = Tuple[int, int, int, int]  # x0, y0, width, height in pixels
@@ -179,25 +179,18 @@ def trace_method_uses_grid(trace_method: str | None) -> bool:
     return normalize_text_trace_method(trace_method) == TRACE_METHOD_GRID
 
 
-def template_hint_for_shape_mode(shape_mode: str, *, extra_shapes: bool = False) -> str:
-    circle_template = (
-        "Use a fresh ungrouped white circle template (save, reopen, ungroup) with enough layers "
-        "to match your JSON; save and reload the vinyl group after import."
-    )
-    if extra_shapes:
-        return (
-            "FH6 text vinyl with curve primitives (quarter circle, rounded square). "
-            + circle_template
-        )
-    mode = normalize_text_shape_mode(shape_mode)
-    if mode in (SHAPE_MODE_ELLIPSES, SHAPE_MODE_CIRCLES, SHAPE_MODE_TRIANGLES, SHAPE_MODE_MIXED):
-        return (
-            "FH6 text vinyl uses real in-game vinyl shapes (import via Import text). "
-            + circle_template
-        )
+def template_hint_for_shape_mode(
+    shape_mode: str,
+    *,
+    extra_shapes: bool = False,
+    trace_method: str | None = None,
+) -> str:
+    del shape_mode, extra_shapes, trace_method
     return (
-        "FH6 text vinyl uses real square vinyl shapes. "
-        + circle_template
+        "FH6 text vinyl JSON may use squares, rectangles, circles, or curves. "
+        "Use a fresh ungrouped white circle (sphere) template (save, reopen, ungroup) with enough layers "
+        "to match your JSON. Square or rectangle text may look circular in-game until you save and reload "
+        "the vinyl group."
     )
 
 
@@ -312,12 +305,12 @@ def build_typecode_payload_from_mask(
         extra_shapes=extra_shapes,
     )
     if extra_shapes:
-        from text_curved_trace import build_curved_typecode_shapes
+        from text.curved_trace import build_curved_typecode_shapes
 
         shapes = build_curved_typecode_shapes(mask, color, cell_size=cell_size)
         coordinate_model = TEXT_TYPECODE_CURVED_COORDINATE_MODEL
     elif uses_strokes:
-        from text_stroke_trace import STROKE_COORDINATE_MODEL, build_stroke_typecode_shapes
+        from text.stroke_trace import STROKE_COORDINATE_MODEL, build_stroke_typecode_shapes
 
         shapes = build_stroke_typecode_shapes(
             mask,
@@ -351,7 +344,7 @@ def build_typecode_payload_from_mask(
         "shapes": shapes,
     }
     if mask_options is not None:
-        from fh6_layer_masks import TextMaskOptions, append_text_masks_to_payload, polish_supported_for_shape_mode
+        from text.layer_masks import TextMaskOptions, append_text_masks_to_payload, polish_supported_for_shape_mode
 
         if mask_options.include_polish_masks and not polish_supported_for_shape_mode(
             shape_mode,
@@ -372,7 +365,14 @@ def build_typecode_payload_from_mask(
             trace_rectangles=trace_rectangles,
             options=mask_options,
         )
-    return payload
+    from text.import_template import attach_text_generation_metadata
+
+    return attach_text_generation_metadata(
+        payload,
+        shape_mode=shape_mode,
+        trace_method=resolved_method,
+        extra_shapes=extra_shapes,
+    )
 
 
 def build_typecode_from_text(
@@ -405,7 +405,7 @@ def build_typecode_from_text(
                 f"Font {resolved_font.name} is missing {len(missing)} character(s): "
                 f"{format_missing_chars(missing)}. Choose another font or install a fuller CJK face.{hint}"
             )
-    from text_layout import layout_options_from_writing_mode
+    from text.layout import layout_options_from_writing_mode
 
     layout_opts = layout if layout is not None else layout_options_from_writing_mode(writing_mode)
     mask = render_text_mask(
@@ -596,7 +596,7 @@ def render_text_mask(
 ):
     if not text or not text.strip():
         raise ValueError("Text is empty")
-    from text_layout import (
+    from text.layout import (
         WRITING_MODE_HORIZONTAL_RTL,
         TextLayoutOptions,
         layout_options_from_writing_mode,
@@ -965,11 +965,11 @@ def count_drawable_trace_layers_from_mask(
         extra_shapes=extra_shapes,
     )
     if extra_shapes:
-        from text_curved_trace import count_curved_shapes_from_mask
+        from text.curved_trace import count_curved_shapes_from_mask
 
         return count_curved_shapes_from_mask(mask, cell_size=cell_size), None
     if uses_strokes:
-        from text_stroke_trace import count_stroke_layers_from_mask
+        from text.stroke_trace import count_stroke_layers_from_mask
 
         return (
             count_stroke_layers_from_mask(
@@ -997,9 +997,9 @@ def count_trace_layers_from_mask(
     mask_options=None,
     vertical: bool = False,
 ) -> int:
-    from fh6_layer_masks import TextMaskOptions, polish_supported_for_shape_mode
+    from text.layer_masks import TextMaskOptions, polish_supported_for_shape_mode
     from pixel_art_geometry import FH6_BOUNDARY_LAYERS
-    from text_mask_polish import estimate_polish_mask_layers
+    from text.mask_polish import estimate_polish_mask_layers
 
     options = mask_options if mask_options is not None else TextMaskOptions()
     resolved_method, _uses_strokes, prefer_skeleton = resolve_text_trace_pipeline(
@@ -1053,7 +1053,7 @@ def estimate_traced_text_layers(
     writing_mode: str | None = None,
     layout=None,
 ) -> int:
-    from text_layout import layout_options_from_writing_mode
+    from text.layout import layout_options_from_writing_mode
 
     resolved_font = Path(font_path) if font_path else find_font_for_text(text)
     layout_opts = layout if layout is not None else layout_options_from_writing_mode(writing_mode)
@@ -1090,8 +1090,8 @@ def resolve_cell_size_for_layer_budget(
     layout=None,
 ) -> tuple[int, int]:
     """Increase cell_size until traced drawable count is <= max_layers (or cell_size is 16)."""
-    from fh6_layer_masks import TextMaskOptions
-    from text_layout import layout_options_from_writing_mode
+    from text.layer_masks import TextMaskOptions
+    from text.layout import layout_options_from_writing_mode
 
     options = mask_options if mask_options is not None else TextMaskOptions()
     budget = max(1, int(max_layers))
@@ -1156,8 +1156,8 @@ def build_typecode_from_text_with_options(
     layout=None,
 ) -> tuple[dict, int]:
     """Build type-code JSON; return (payload, cell_size_used)."""
-    from fh6_layer_masks import TextMaskOptions
-    from text_layout import layout_options_from_writing_mode
+    from text.layer_masks import TextMaskOptions
+    from text.layout import layout_options_from_writing_mode
 
     options = mask_options if mask_options is not None else TextMaskOptions()
     layout_opts = layout if layout is not None else layout_options_from_writing_mode(writing_mode)
@@ -1176,7 +1176,7 @@ def build_typecode_from_text_with_options(
             max_drawable_layers=max_drawable_layers,
         )
     if use_forza_font:
-        from text_forza_fonts import build_typecode_from_forza_font
+        from text.forza_fonts import build_typecode_from_forza_font
 
         payload = build_typecode_from_forza_font(
             text,
@@ -1241,10 +1241,10 @@ def estimate_typed_text_layers(
     layout=None,
 ) -> tuple[int, int, dict]:
     """Return (total_layers, cell_size_used, layer_summary)."""
-    from fh6_layer_masks import TextMaskOptions, polish_supported_for_shape_mode
+    from text.layer_masks import TextMaskOptions, polish_supported_for_shape_mode
     from pixel_art_geometry import FH6_BOUNDARY_LAYERS
-    from text_layout import layout_options_from_writing_mode
-    from text_mask_polish import estimate_polish_mask_layers
+    from text.layout import layout_options_from_writing_mode
+    from text.mask_polish import estimate_polish_mask_layers
 
     empty_summary = {
         "drawable_count": 0,
@@ -1272,7 +1272,7 @@ def estimate_typed_text_layers(
         )
 
     if use_forza_font:
-        from text_forza_fonts import estimate_forza_font_layer_count
+        from text.forza_fonts import estimate_forza_font_layer_count
 
         count = estimate_forza_font_layer_count(text)
         summary = {

@@ -81,7 +81,7 @@ def make_fh6_mask_shape(
     *,
     mask_role: str = MASK_ROLE_POLISH,
 ) -> dict:
-    from text_geometry import SHAPE_MODE_RECTANGLES, _rect_to_typecode_shape
+    from text.geometry import SHAPE_MODE_RECTANGLES, _rect_to_typecode_shape
 
     shape = _rect_to_typecode_shape(x0, y0, width, height, MASK_COLOR, SHAPE_MODE_RECTANGLES)
     shape["mask"] = True
@@ -145,7 +145,7 @@ def append_text_masks_to_payload(
 
     polish_shapes: List[dict] = []
     if options.include_polish_masks and trace_rectangles:
-        from text_mask_polish import build_polish_mask_shapes
+        from text.mask_polish import build_polish_mask_shapes
 
         polish_shapes = build_polish_mask_shapes(
             ideal_mask,
@@ -186,7 +186,7 @@ def polish_supported_for_shape_mode(
     trace_method: str | None = None,
     allow_overlapping_shapes: bool = False,
 ) -> bool:
-    from text_geometry import resolve_text_trace_pipeline
+    from text.geometry import resolve_text_trace_pipeline
 
     _method, uses_strokes, _prefer_skeleton = resolve_text_trace_pipeline(
         trace_method=trace_method,

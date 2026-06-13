@@ -6,9 +6,12 @@ TEXT_VINYL_EN = {
     "text_tab": "Text",
     "text_tab_hint": "Enter text, choose a font, then generate. Previews are on the right.",
     "text_import_shape_notice": (
-        "Text may use shapes other than circles. Despite this, use circles in the FH6 Design Editor. "
-        "Upon successful import, text may appear to use circles. Save the vinyl and reload it, "
-        "and it should appear just as it does in the preview."
+        "Text JSON may use squares, rectangles, or curves. In FH6, use a fresh ungrouped white circle "
+        "(sphere) template with enough layers to match your JSON. After import, the design may look circular "
+        "until you save and reload the vinyl group—that is normal FH6 behavior, not a failed import."
+    ),
+    "text_import_reload_reminder": (
+        "Import result may not match the preview. Save and reload the vinyl to ensure proper import."
     ),
     "text_dismiss_notice": "Dismiss",
     "text_import_shape_notice_show": "Import shapes note",
@@ -65,7 +68,11 @@ TEXT_VINYL_EN = {
     "text_trace_active_summary_bars_full": "Active: rotated bars (full fill) · cell size not used",
     "text_trace_active_summary_bars_skeleton": "Active: rotated bars (skeleton) · cell size not used",
     "text_trace_active_summary_extra": "Active: extra shapes (curves) · cell size {cell}",
-    "text_template_hint": "For Import: use a fresh ungrouped white circle template (save, reopen, ungroup) with a layer count matching your JSON. Trace shape mode only affects generated primitives, not the template.",
+    "text_template_hint": (
+        "For Import: use a fresh ungrouped white circle template (save, reopen, ungroup) with a layer count "
+        "matching your JSON. If your text uses squares or rectangles, it may appear circular in-game until "
+        "you save and reload the vinyl group."
+    ),
     "text_cell_hint": "Larger values merge more pixels into each shape, which uses fewer vinyl layers but looks blockier.",
     "text_preset": "Quality preset",
     "text_preset_custom": "Custom (manual settings)",
@@ -77,12 +84,12 @@ TEXT_VINYL_EN = {
     "text_custom_preset_note": "Custom preset uses the advanced settings below.",
     "text_help_title": "Help",
     "text_help_close": "Close",
-    "text_help_preset": "Pick a starting point for quality vs. layer count. CJK presets use rectangles or ellipses, fit to the 1800-layer budget, and work with the Import tab's white circle template. Choose Custom to tune settings yourself.",
+    "text_help_preset": "Pick a starting point for quality vs. layer count. CJK presets use rectangles or ellipses, fit to the 1800-layer budget, and match the square or circle template shown below. Choose Custom to tune settings yourself.",
     "text_help_font_size": "How large the typed text is drawn before tracing. Bigger text uses more shapes and layers.",
     "text_help_cell_size": "Grid step when tracing the text mask. Only used when trace method is Grid. 1 is sharpest (most layers). Higher numbers merge pixels into fewer, blockier shapes.",
     "text_help_trace_method": "How the text mask becomes vinyl layers: Grid fills pixels cell by cell; Rotated bars (full fill) uses many overlapping bars for coverage; Rotated bars (skeleton) uses fewer centerline bars per letter.",
-    "text_help_shape_primitive": "Which FH6 vinyl primitive each grid cell becomes: Rectangles (stretched Square), Ellipses, or Circles. Only applies when trace method is Grid. The in-game import template should still be white circles.",
-    "text_help_shape_mode": "Which FH6 vinyl primitive each traced cell becomes: Rectangles (stretched Square), Ellipses, or Circles. The in-game import template should still be white circles.",
+    "text_help_shape_primitive": "Which FH6 vinyl primitive each grid cell becomes: Rectangles (stretched Square), Ellipses, or Circles. Only applies when trace method is Grid. Match the import template hint below (square vs circle).",
+    "text_help_shape_mode": "Which FH6 vinyl primitive each traced cell becomes: Rectangles (stretched Square), Ellipses, or Circles. Match the import template hint below (square vs circle).",
     "text_help_fit_budget": "When enabled, the tool may increase trace cell size automatically so the design fits within your max layer count.",
     "text_help_extra_shapes": "Uses quarter-circle and rounded-square FH6 primitives at corners for smoother curves. Uses more shape types than basic trace modes.",
     "text_help_boundary_masks": "Adds four off-canvas FH6 mask layers so save/paste/group bounds work reliably. Recommended for import.",

@@ -12,7 +12,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from text_geometry import (
+from text.geometry import (
     build_typecode_from_text,
     build_typecode_from_text_image,
     contains_cjk,
@@ -22,8 +22,8 @@ from text_geometry import (
     text_shape_mode_choices,
     write_text_design_json,
 )
-from text_fonts import discover_cjk_fonts, find_cjk_font, format_missing_chars, resolve_font_path, validate_text_coverage
-from text_layout import WRITING_MODES, normalize_writing_mode
+from text.fonts import discover_cjk_fonts, find_cjk_font, format_missing_chars, resolve_font_path, validate_text_coverage
+from text.layout import WRITING_MODES, normalize_writing_mode
 
 
 def parse_color(value: str):

@@ -67,8 +67,8 @@ from utils import load_cv2, load_pillow
 
 from i18n import tr
 
-from ui.text_vinyl_compat import TextVinylThemeAdapter
-from ui.text_vinyl_workspace import TextVinylWorkspace
+from text.ui.compat import TextVinylThemeAdapter
+from text.ui.workspace import TextVinylWorkspace
 
 LANGUAGES = { 
     "English": "en",
@@ -333,6 +333,16 @@ def is_typecode_payload(payload):
 def is_typecode_json(path):
     try:
         return is_typecode_payload(json.loads(Path(path).read_text(encoding="utf-8")))
+    except Exception:
+        return False
+
+
+def is_text_vinyl_typecode_json(path):
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if str(payload.get("format") or "").strip().lower() == "fh6_text_typecode_v1":
+            return True
+        return isinstance(payload.get("text_generation"), dict)
     except Exception:
         return False
 
@@ -4677,7 +4687,14 @@ class App:
             table = candidate.get("table")
             rejection = self._candidate_rejection(candidate, template_count, require_circle_template)
             if group and table and not rejection and selected is None:
-                selected = (index, group, table, int(candidate.get("valid_ptrs") or 0), int(candidate.get("sample_ok_count") or 0), self._candidate_shape_count(candidate, 102))
+                selected = (
+                    index,
+                    group,
+                    table,
+                    int(candidate.get("valid_ptrs") or 0),
+                    int(candidate.get("sample_ok_count") or 0),
+                    self._candidate_shape_count(candidate, 102),
+                )
             else:
                 rejected.append(f"#{index}: {rejection or 'missing group/table'}")
             if not require_circle_template and group and table and not rejection:
@@ -4788,6 +4805,8 @@ class App:
             #     self.queue.put(("status", tr(self.lang, "failed")))
             #     return
             self.queue.put(("log", tr(self.lang, "full_shape_import_done").format(count=imported)))
+            if is_text_vinyl_typecode_json(json_path):
+                self.queue.put(("log", tr(self.lang, "text_import_reload_reminder")))
             self.queue.put(("status", tr(self.lang, "done")))
         except Exception as exc:
             self.queue.put(("log", f"{tr(self.lang, 'full_shape_failed')}: {exc}"))

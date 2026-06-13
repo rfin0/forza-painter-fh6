@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_benchmark_probes import (
+from text.benchmark_probes import (
     CHINESE_BENCHMARK_TEXT,
     CHINESE_GROUND_UP_TEXT,
     JAPANESE_BENCHMARK_EXAMPLES,
@@ -19,7 +19,7 @@ from text_benchmark_probes import (
     primary_benchmark_text,
     random_benchmark_text,
 )
-from text_fonts import (
+from text.fonts import (
     SCRIPT_CHINESE,
     SCRIPT_JAPANESE,
     SCRIPT_KOREAN,

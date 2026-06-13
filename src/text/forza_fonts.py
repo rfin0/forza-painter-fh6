@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 
 from fh6_shape_catalog import ShapeCatalogEntry, load_catalog
 from pixel_art_geometry import POSITION_SCALE, SIZE_SCALE
-from text_geometry import TEXT_TYPECODE_FORMAT, TEXT_TYPECODE_SCORE, _load_pillow
+from text.geometry import TEXT_TYPECODE_FORMAT, TEXT_TYPECODE_SCORE, _load_pillow
 
 ColorRGBA = Tuple[int, int, int, int]
 
@@ -107,7 +107,7 @@ def _measure_glyph_layout(
     font_size: int,
 ) -> Tuple[List[Tuple[str, int, int, int, int]], int, int]:
     """Return (char, x0, y0, width, height) boxes using system metrics for spacing."""
-    from text_fonts import _LATIN_FALLBACKS
+    from text.fonts import _LATIN_FALLBACKS
 
     Image, ImageDraw, ImageFont = _load_pillow()
     font = None

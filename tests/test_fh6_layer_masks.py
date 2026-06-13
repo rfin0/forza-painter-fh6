@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from fh6_layer_masks import (
+from text.layer_masks import (
     MASK_ROLE_BOUNDARY,
     MASK_ROLE_POLISH,
     TextMaskOptions,
@@ -16,13 +16,13 @@ from fh6_layer_masks import (
     is_fh6_mask_shape,
     summarize_payload_layers,
 )
-from text_geometry import (
+from text.geometry import (
     SHAPE_MODE_RECTANGLES,
     TEXT_TYPECODE_FORMAT,
     build_typecode_payload_from_mask,
     decompose_mask_to_rectangles,
 )
-from text_mask_polish import build_polish_mask_rectangles, rasterize_trace_rectangles
+from text.mask_polish import build_polish_mask_rectangles, rasterize_trace_rectangles
 
 
 def test_boundary_masks_are_flagged_and_count_four() -> None:

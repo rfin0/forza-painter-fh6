@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 from typing import List, Tuple
 
-from mandarin_chars import mandarin_character_library
+from text.mandarin_chars import mandarin_character_library
 
 LIBRARY_LATIN = "latin_extended"
 LIBRARY_HIRAGANA = "hiragana"

@@ -10,7 +10,7 @@ from typing import List, Sequence, Tuple
 
 from fh6_shape_catalog import get_primitive_type_code, get_square_type_code
 from pixel_art_geometry import POSITION_SCALE, SIZE_SCALE
-from text_geometry import (
+from text.geometry import (
     Rect,
     TEXT_TYPECODE_SCORE,
     decompose_mask_to_rectangles,

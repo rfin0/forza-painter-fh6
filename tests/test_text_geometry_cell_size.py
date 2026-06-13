@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_geometry import decompose_mask_to_rectangles, normalize_trace_cell_size
+from text.geometry import decompose_mask_to_rectangles, normalize_trace_cell_size
 
 
 def test_normalize_trace_cell_size_allows_one() -> None:

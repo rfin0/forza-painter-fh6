@@ -6,7 +6,7 @@ from tkinter import BOTH, X, Frame, Toplevel, ttk
 from typing import Any, Callable
 
 from app_config import Theme
-from text_char_libraries import (
+from text.char_libraries import (
     LIBRARY_HANGUL,
     LIBRARY_HANZI,
     LIBRARY_HIRAGANA,
@@ -14,13 +14,13 @@ from text_char_libraries import (
     LIBRARY_KATAKANA,
     LIBRARY_LATIN,
 )
-from text_fonts import (
+from text.fonts import (
     SCRIPT_CHINESE,
     SCRIPT_JAPANESE,
     SCRIPT_KOREAN,
     SCRIPT_UNIVERSAL,
 )
-from ui.char_grid_picker import CharGridPicker
+from text.ui.char_grid_picker import CharGridPicker
 
 _JAPANESE_CHAR_LIBRARIES = (
     (LIBRARY_HIRAGANA, "text_char_library_hiragana"),

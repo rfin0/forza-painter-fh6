@@ -1349,8 +1349,8 @@ TYPECODE_TEXT = {
 for _lang, _items in TYPECODE_TEXT.items():
     TEXT.setdefault(_lang, {}).update(_items)
 
-from text_vinyl_i18n_en import TEXT_VINYL_EN
-from text_vinyl_i18n_locales import TEXT_VINYL_BY_LANG
+from text.i18n_en import TEXT_VINYL_EN
+from text.i18n_locales import TEXT_VINYL_BY_LANG
 
 TEXT["en"].update(TEXT_VINYL_EN)
 for _lang, _items in TEXT_VINYL_BY_LANG.items():

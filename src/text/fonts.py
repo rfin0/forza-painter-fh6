@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from mandarin_chars import is_hangul_char, text_contains_hangul, text_scripts, unique_chars
+from text.mandarin_chars import is_hangul_char, text_contains_hangul, text_scripts, unique_chars
 
 _FONT_EXTS = {".ttf", ".ttc", ".otf", ".fon"}
 _PROBE_SIZE = 48

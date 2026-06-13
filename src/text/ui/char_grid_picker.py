@@ -7,7 +7,7 @@ from typing import Any, Callable
 from tkinter import BOTH, LEFT, RIGHT, X, Button, Entry, Frame, Label, StringVar, ttk
 
 from i18n import ui_font_name
-from text_char_libraries import GRID_COLUMNS, filtered_char_count, library_total, paginate_library
+from text.char_libraries import GRID_COLUMNS, filtered_char_count, library_total, paginate_library
 
 
 class CharGridPicker:

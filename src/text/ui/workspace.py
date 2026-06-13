@@ -31,9 +31,9 @@ from tkinter import (
 from app_paths import ROOT
 from ui_preferences import load_ui_preferences, save_ui_preferences
 from asset_workspace import TEXT_VINYL_WORKSPACE_ROOT, text_vinyl_workspace, write_manifest, workspace_source_file
-from mandarin_chars import text_contains_hangul
-from text_layout import WRITING_MODE_HORIZONTAL_LTR
-from text_fonts import (
+from text.mandarin_chars import text_contains_hangul
+from text.layout import WRITING_MODE_HORIZONTAL_LTR
+from text.fonts import (
     SCRIPT_CHINESE,
     SCRIPT_JAPANESE,
     SCRIPT_KOREAN,
@@ -52,10 +52,10 @@ from text_fonts import (
     recommend_font_for_text,
     validate_text_coverage,
 )
-from fh6_layer_masks import TextMaskOptions, summarize_payload_layers
-from text_benchmark_probes import random_benchmark_text
+from text.layer_masks import TextMaskOptions, summarize_payload_layers
+from text.benchmark_probes import random_benchmark_text
 from app_config import Theme
-from text_geometry import (
+from text.geometry import (
     TRACE_METHOD_BARS_FULL,
     TRACE_METHOD_BARS_SKELETON,
     TRACE_METHOD_GRID,
@@ -72,16 +72,16 @@ from text_geometry import (
     trace_method_uses_grid,
     write_text_design_json,
 )
-from text_vinyl_presets import (
+from text.presets import (
     CJK_DEFAULT_PRESET_ID,
     DEFAULT_MAX_DRAWABLE_LAYERS,
     UI_PRESET_ORDER,
     get_preset,
     normalize_preset_id,
 )
-from ui.character_library_dialog import CharacterLibraryDialog
-from ui.color_values_editor import ColorValuesEditor
-from ui.help_hint import create_help_button, guard_combobox_against_mousewheel, pack_label_with_help, themed_entry, themed_text
+from text.ui.character_library_dialog import CharacterLibraryDialog
+from text.ui.color_values_editor import ColorValuesEditor
+from text.ui.help_hint import create_help_button, guard_combobox_against_mousewheel, pack_label_with_help, themed_entry, themed_text
 
 FONT_COMBO_DISPLAY_FONT = ("Consolas", 10)
 
@@ -150,6 +150,12 @@ class TextVinylWorkspace:
         self.text_layer_stack_label: Label | None = None
         self.text_coverage_label: Label | None = None
         self._coverage_apply_button: Button | None = None
+        self._trace_method_label_to_mode: dict[str, str] = {}
+        self._trace_method_mode_to_label: dict[str, str] = {}
+        self._shape_mode_label_to_mode: dict[str, str] = {}
+        self._shape_mode_mode_to_label: dict[str, str] = {}
+        self._preset_label_to_id: dict[str, str] = {}
+        self._preset_id_to_label: dict[str, str] = {}
 
     @property
     def lang(self) -> str:
@@ -515,9 +521,16 @@ class TextVinylWorkspace:
         self.text_layer_estimate_label.grid(row=4, column=0, columnspan=4, sticky="ew", pady=(8, 0))
         app._bind_wraplength(self.text_layer_estimate_label, opts, padding=8)
 
-        self.text_template_hint_label = app._label(opts, "text_template_hint", anchor="w", theme_role="info")
+        self.text_template_hint_label = Label(
+            opts,
+            text="",
+            anchor="w",
+            bg=app._parent_bg(opts),
+            fg=app.themes.fg("info"),
+        )
         self.text_template_hint_label.grid(row=5, column=0, columnspan=4, sticky="ew", pady=(4, 0))
         app._bind_wraplength(self.text_template_hint_label, opts, padding=8)
+        self.update_shape_hint()
 
         color_section = Frame(opts, bg=Theme.PANEL)
         color_section.grid(row=6, column=0, columnspan=4, sticky="ew", pady=(8, 0))
@@ -1082,8 +1095,8 @@ class TextVinylWorkspace:
             preview_label.image = None
             return
         try:
-            from text_geometry import render_text_mask
-            from text_layout import layout_options_from_writing_mode
+            from text.geometry import render_text_mask
+            from text.layout import layout_options_from_writing_mode
 
             mask = render_text_mask(
                 sample,
@@ -1150,7 +1163,6 @@ class TextVinylWorkspace:
             wraplength=280,
         )
         self._import_shape_notice_label.pack(side=LEFT, padx=(8, 2), pady=6)
-        app.translated.append((self._import_shape_notice_label, "text_import_shape_notice", "text"))
 
         Button(
             body,
@@ -1291,7 +1303,7 @@ class TextVinylWorkspace:
         if discovered:
             return discovered[0].path
 
-        from text_fonts import find_font_for_text
+        from text.fonts import find_font_for_text
 
         return find_font_for_text(self._get_panel_text(script), script=script)
 
@@ -1531,6 +1543,8 @@ class TextVinylWorkspace:
             text=self._tr("text_template_hint"),
             fg=self._color("COLOR_INFO"),
         )
+        if self._import_shape_notice_label is not None:
+            self._import_shape_notice_label.config(text=self._tr("text_import_shape_notice"))
 
     def _schedule_coverage_check(self) -> None:
         if self._coverage_job is not None:

@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from text_layout import (
+from text.layout import (
     WRITING_MODE_HORIZONTAL_LTR,
     WRITING_MODE_VERTICAL_T2B,
     WRITING_MODE_VERTICAL_T2B_RTL,
@@ -15,7 +15,7 @@ from text_layout import (
     layout_options_from_writing_mode,
     normalize_writing_mode,
 )
-from text_fonts import SCRIPT_JAPANESE, SCRIPT_UNIVERSAL
+from text.fonts import SCRIPT_JAPANESE, SCRIPT_UNIVERSAL
 
 
 def test_default_writing_mode_is_horizontal_ltr_for_all_scripts() -> None:
@@ -30,8 +30,8 @@ def test_normalize_writing_mode_falls_back_to_ltr() -> None:
 
 def test_vertical_mask_is_taller_than_horizontal_for_japanese_sample() -> None:
     try:
-        from text_fonts import find_cjk_font
-        from text_geometry import render_text_mask
+        from text.fonts import find_cjk_font
+        from text.geometry import render_text_mask
 
         font_path = find_cjk_font()
     except Exception:
@@ -56,8 +56,8 @@ def test_vertical_mask_is_taller_than_horizontal_for_japanese_sample() -> None:
 
 def test_vertical_columns_rtl_changes_horizontal_extent() -> None:
     try:
-        from text_fonts import find_cjk_font
-        from text_geometry import render_text_mask
+        from text.fonts import find_cjk_font
+        from text.geometry import render_text_mask
 
         font_path = find_cjk_font()
     except Exception:

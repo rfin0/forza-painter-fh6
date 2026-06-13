@@ -7,13 +7,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from fh6_layer_masks import TextMaskOptions
-from text_geometry import resolve_cell_size_for_layer_budget
+from text.layer_masks import TextMaskOptions
+from text.geometry import resolve_cell_size_for_layer_budget
 
 
 def test_resolve_cell_size_for_layer_budget() -> None:
     try:
-        from text_fonts import find_cjk_font
+        from text.fonts import find_cjk_font
 
         font = find_cjk_font()
     except Exception:

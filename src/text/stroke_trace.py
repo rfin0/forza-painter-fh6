@@ -12,7 +12,7 @@ from typing import Iterable, List, Sequence, Set, Tuple
 
 from fh6_shape_catalog import get_square_type_code
 from pixel_art_geometry import POSITION_SCALE, SIZE_SCALE
-from text_geometry import TEXT_TYPECODE_SCORE
+from text.geometry import TEXT_TYPECODE_SCORE
 
 ColorRGBA = Tuple[int, int, int, int]
 Point = Tuple[int, int]
@@ -413,7 +413,7 @@ def _mask_image_from_pixels(pixels: Set[Point]):
 
 def _fallback_strokes_from_rectangles(pixels: Set[Point], stroke_w: float) -> List[StrokeRect]:
     """Axis-aligned rectangle trace when UV bar runs cannot start (e.g. 'A', 'K')."""
-    from text_geometry import decompose_mask_to_rectangles
+    from text.geometry import decompose_mask_to_rectangles
 
     if not pixels:
         return []
