@@ -522,6 +522,12 @@ def load_shapes(path, allow_unknown_low_byte=False):
     shapes = payload.get("shapes")
     if not isinstance(shapes, list) or not shapes:
         raise ValueError("JSON must contain non-empty shapes list.")
+    try:
+        from pixel_art_geometry import is_scaled_trace_payload, scaled_trace_to_memory_fields
+    except ImportError:
+        is_scaled_trace_payload = lambda _payload: False  # type: ignore[assignment,misc]
+        scaled_trace_to_memory_fields = None  # type: ignore[assignment]
+    scaled_trace = is_scaled_trace_payload(payload)
     out = []
     skipped = []
     font_registry = load_font_registry()
@@ -560,6 +566,21 @@ def load_shapes(path, allow_unknown_low_byte=False):
         data = shape["data"]
         if len(data) < 5:
             raise ValueError(f"shape {i} data must have x,y,sx,sy,rotation")
+        if scaled_trace and scaled_trace_to_memory_fields is not None:
+            memory = scaled_trace_to_memory_fields(data)
+            x = memory["x"]
+            y = memory["y"]
+            sx = memory["sx"]
+            sy = memory["sy"]
+            rotation = memory["rotation"]
+            skew = memory["skew"]
+        else:
+            x = float(data[0])
+            y = float(data[1])
+            sx = float(data[2])
+            sy = float(data[3])
+            rotation = float(data[4])
+            skew = float(data[5]) if len(data) > 5 else 0.0
         out.append({
             "index": i,
             "type_code": code,
@@ -567,16 +588,17 @@ def load_shapes(path, allow_unknown_low_byte=False):
             "shape_word": shape_word & 0xFFFF,
             "page_byte": (shape_word >> 8) & 0xFF,
             "font_shape": font_item,
-            "x": float(data[0]),
-            "y": float(data[1]),
-            "sx": float(data[2]),
-            "sy": float(data[3]),
-            "rotation": float(data[4]),
-            "skew": float(data[5]) if len(data) > 5 else 0.0,
+            "x": x,
+            "y": y,
+            "sx": sx,
+            "sy": sy,
+            "rotation": rotation,
+            "skew": skew,
             "extra_data": list(data[5:]),
             "color": list(clamp_color(shape.get("color"))),
             "mask": shape_mask_flag(shape, data),
             "score": shape.get("score"),
+            "source_format": "scaled_trace" if scaled_trace else None,
         })
     return out, skipped
 
