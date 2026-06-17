@@ -1645,44 +1645,86 @@ class App:
         left_outer = Frame(self.region_paint_tab)
         left_outer.pack(side=LEFT, fill=BOTH, expand=False, padx=(0, 10), pady=10)
 
-        scroll_area = Frame(left_outer)
-        scroll_area.pack(fill=BOTH, expand=True, pady=(0, 8))
-        left_canvas = Canvas(scroll_area, highlightthickness=0, width=380)
-        left_scroll = ttk.Scrollbar(scroll_area, orient="vertical", command=left_canvas.yview)
-        left_canvas.configure(yscrollcommand=left_scroll.set)
-        left_canvas.pack(side=LEFT, fill=BOTH, expand=True)
-        left_scroll.pack(side=RIGHT, fill="y")
-        left = Frame(left_canvas)
-        left_window = left_canvas.create_window((0, 0), window=left, anchor="nw")
+        # --- Scrollable area 1: Steps 1-3 ---
+        scroll_area_1 = Frame(left_outer)
+        scroll_area_1.pack(fill=BOTH, expand=True, pady=(0, 4))
+        left_canvas_1 = Canvas(scroll_area_1, highlightthickness=0, width=380)
+        left_scroll_1 = ttk.Scrollbar(scroll_area_1, orient="vertical", command=left_canvas_1.yview)
+        left_canvas_1.configure(yscrollcommand=left_scroll_1.set)
+        left_canvas_1.pack(side=LEFT, fill=BOTH, expand=True)
+        left_scroll_1.pack(side=RIGHT, fill="y")
+        left_1 = Frame(left_canvas_1)
+        left_window_1 = left_canvas_1.create_window((0, 0), window=left_1, anchor="nw")
 
-        def _apply_region_scroll_region():
-            left_canvas.configure(scrollregion=left_canvas.bbox("all"))
+        # --- Scrollable area 2: Step 4, Pass History, Result buttons ---
+        scroll_area_2 = Frame(left_outer)
+        scroll_area_2.pack(fill=BOTH, expand=True, pady=(4, 0))
+        left_canvas_2 = Canvas(scroll_area_2, highlightthickness=0, width=380)
+        left_scroll_2 = ttk.Scrollbar(scroll_area_2, orient="vertical", command=left_canvas_2.yview)
+        left_canvas_2.configure(yscrollcommand=left_scroll_2.set)
+        left_canvas_2.pack(side=LEFT, fill=BOTH, expand=True)
+        left_scroll_2.pack(side=RIGHT, fill="y")
+        left_2 = Frame(left_canvas_2)
+        left_window_2 = left_canvas_2.create_window((0, 0), window=left_2, anchor="nw")
 
-        def _update_region_scroll_region(_event=None):
-            left_canvas.after(LAYOUT_RESIZE_DEBOUNCE_MS, _apply_region_scroll_region)
+        # --- Scroll helpers for area 1 ---
+        def _apply_region_scroll_region_1():
+            left_canvas_1.configure(scrollregion=left_canvas_1.bbox("all"))
 
-        def _match_region_canvas_width(event):
+        def _update_region_scroll_region_1(_event=None):
+            left_canvas_1.after(LAYOUT_RESIZE_DEBOUNCE_MS, _apply_region_scroll_region_1)
+
+        def _match_region_canvas_width_1(event):
             width = max(1, int(event.width))
             bucket = max(1, LAYOUT_SIZE_BUCKET)
             width = max(1, int(round(width / bucket) * bucket))
-            left_canvas.itemconfigure(left_window, width=width)
+            left_canvas_1.itemconfigure(left_window_1, width=width)
 
-        def _region_mousewheel(event):
-            left_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        def _region_mousewheel_1(event):
+            left_canvas_1.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-        def _bind_region_mousewheel(_event=None):
-            left_canvas.bind_all("<MouseWheel>", _region_mousewheel)
+        def _bind_region_mousewheel_1(_event=None):
+            left_canvas_1.bind_all("<MouseWheel>", _region_mousewheel_1)
 
-        def _unbind_region_mousewheel(_event=None):
-            left_canvas.unbind_all("<MouseWheel>")
+        def _unbind_region_mousewheel_1(_event=None):
+            left_canvas_1.unbind_all("<MouseWheel>")
 
-        left.bind("<Configure>", _update_region_scroll_region)
-        left_canvas.bind("<Configure>", _match_region_canvas_width)
-        scroll_area.bind("<Enter>", _bind_region_mousewheel)
-        scroll_area.bind("<Leave>", _unbind_region_mousewheel)
+        # --- Scroll helpers for area 2 ---
+        def _apply_region_scroll_region_2():
+            left_canvas_2.configure(scrollregion=left_canvas_2.bbox("all"))
+
+        def _update_region_scroll_region_2(_event=None):
+            left_canvas_2.after(LAYOUT_RESIZE_DEBOUNCE_MS, _apply_region_scroll_region_2)
+
+        def _match_region_canvas_width_2(event):
+            width = max(1, int(event.width))
+            bucket = max(1, LAYOUT_SIZE_BUCKET)
+            width = max(1, int(round(width / bucket) * bucket))
+            left_canvas_2.itemconfigure(left_window_2, width=width)
+
+        def _region_mousewheel_2(event):
+            left_canvas_2.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_region_mousewheel_2(_event=None):
+            left_canvas_2.bind_all("<MouseWheel>", _region_mousewheel_2)
+
+        def _unbind_region_mousewheel_2(_event=None):
+            left_canvas_2.unbind_all("<MouseWheel>")
+
+        # Bind scroll-area 1
+        left_1.bind("<Configure>", _update_region_scroll_region_1)
+        left_canvas_1.bind("<Configure>", _match_region_canvas_width_1)
+        scroll_area_1.bind("<Enter>", _bind_region_mousewheel_1)
+        scroll_area_1.bind("<Leave>", _unbind_region_mousewheel_1)
+
+        # Bind scroll-area 2
+        left_2.bind("<Configure>", _update_region_scroll_region_2)
+        left_canvas_2.bind("<Configure>", _match_region_canvas_width_2)
+        scroll_area_2.bind("<Enter>", _bind_region_mousewheel_2)
+        scroll_area_2.bind("<Leave>", _unbind_region_mousewheel_2)
 
         # Step 1 — Image & Profile
-        step1 = ttk.LabelFrame(left, text=tr(self.lang, "region_step_image"))
+        step1 = ttk.LabelFrame(left_1, text=tr(self.lang, "region_step_image"))
         self.translated.append((step1, "region_step_image", "text"))
         step1.pack(fill=X, pady=(0, 6))
         row = Frame(step1)
@@ -1708,7 +1750,7 @@ class App:
         self.region_profile_description.pack(fill=X, padx=10, pady=(0, 8))
 
         # Step 2 — Budget
-        step2 = ttk.LabelFrame(left, text=tr(self.lang, "region_step_budget"))
+        step2 = ttk.LabelFrame(left_1, text=tr(self.lang, "region_step_budget"))
         self.translated.append((step2, "region_step_budget", "text"))
         step2.pack(fill=X, pady=(0, 6))
         budget_grid = Frame(step2)
@@ -1726,7 +1768,7 @@ class App:
         Label(rem_row, textvariable=self.region_remaining_var, fg=Theme.ACCENT, bg=self._parent_bg(rem_row)).pack(side=LEFT, padx=6)
 
         # Step 3 — Selection Tools
-        step3 = ttk.LabelFrame(left, text=tr(self.lang, "region_step_selection"))
+        step3 = ttk.LabelFrame(left_1, text=tr(self.lang, "region_step_selection"))
         self.translated.append((step3, "region_step_selection", "text"))
         step3.pack(fill=X, pady=(0, 6))
         tool_row = Frame(step3)
@@ -1784,8 +1826,8 @@ class App:
         self.region_save_json_btn2 = self._button(dup_row, "region_save_result_json", self._region_save_result_json, state="disabled")
         self.region_save_json_btn2.pack(side=LEFT, padx=6, fill=X, expand=True)
 
-        # Step 4 — Actions
-        step4 = ttk.LabelFrame(left_outer, text=tr(self.lang, "region_step_actions"))
+        # Step 4 — Actions (inside scrollable area)
+        step4 = ttk.LabelFrame(left_2, text=tr(self.lang, "region_step_actions"))
         self.translated.append((step4, "region_step_actions", "text"))
         step4.pack(fill=X)
         actions = Frame(step4)
@@ -1801,8 +1843,8 @@ class App:
         Label(status_row, textvariable=self.region_status, fg=Theme.MUTED, bg=self._parent_bg(status_row), anchor="w", wraplength=180).pack(side=LEFT)
         Label(status_row, textvariable=self.region_progress, fg=Theme.ACCENT, bg=self._parent_bg(status_row), font=("Segoe UI", 9), anchor="e", wraplength=180).pack(side=RIGHT)
 
-        # Pass History
-        hist = ttk.LabelFrame(left_outer, text=tr(self.lang, "region_pass_history"))
+        # Pass History (inside scrollable area)
+        hist = ttk.LabelFrame(left_2, text=tr(self.lang, "region_pass_history"))
         self.translated.append((hist, "region_pass_history", "text"))
         hist.pack(fill=X, pady=(6, 0))
         self.region_pass_list = Listbox(hist, height=4, exportselection=False)
@@ -1814,8 +1856,8 @@ class App:
         self.region_restore_btn = self._button(ckpt_row, "region_restore_checkpoint", self._region_restore_checkpoint, state="disabled")
         self.region_restore_btn.pack(side=LEFT)
 
-        # Result actions
-        result_row = Frame(left_outer)
+        # Result actions (inside scrollable area)
+        result_row = Frame(left_2)
         result_row.pack(fill=X, pady=(4, 0))
         self.region_open_folder_btn = self._button(result_row, "region_open_result_folder", self._region_open_result_folder, state="disabled")
         self.region_open_folder_btn.pack(side=LEFT, fill=X, expand=True)
@@ -2954,7 +2996,7 @@ class App:
         self._region_update_button_states()
 
     def _region_restore_checkpoint(self):
-        """Roll back to the selected checkpoint."""
+        """Switch to the selected checkpoint (non-destructive — all checkpoints are preserved)."""
         sel = self.region_pass_list.curselection()
         if not sel:
             return
@@ -2964,14 +3006,6 @@ class App:
         entry = self._region_checkpoint_data[sel_idx]
         if entry.get("is_active"):
             self.log_line("Region Paint: already at this checkpoint.")
-            return
-        # Confirm with user
-        from tkinter import messagebox
-        ok = messagebox.askyesno(
-            tr(self.lang, "region_restore_confirm_title"),
-            tr(self.lang, "region_restore_confirm"),
-        )
-        if not ok:
             return
 
         try:
