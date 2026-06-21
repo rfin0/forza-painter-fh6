@@ -2701,11 +2701,11 @@ class App:
         self.log_line("Region Paint: first pass starting...")
         threading.Thread(
             target=self._region_first_pass_worker,
-            args=(image_path, setting, first_layers, output_dir),
+            args=(image_path, setting, first_layers, total_budget, output_dir),
             daemon=True,
         ).start()
 
-    def _region_first_pass_worker(self, image_path: Path, setting, first_layers: int, output_dir: Path):
+    def _region_first_pass_worker(self, image_path: Path, setting, first_layers: int, total_budget: int, output_dir: Path):
         """Worker thread: prepare, run exe (streaming), finalize."""
         def on_progress(msg):
             self.queue.put(("region_log", msg))
@@ -2716,6 +2716,7 @@ class App:
                 settings_path=str(setting["path"]),
                 first_layers=first_layers,
                 output_dir=str(output_dir),
+                total_budget=total_budget,
                 on_progress=on_progress,
             )
             if "error" in prep:
