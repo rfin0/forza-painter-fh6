@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.9.2 / 2026-06-21
+
+- **Region Paint exclude mode** — Added an "Exclude Mode" checkbox to the Region Paint selection tools. Check it to draw exclusion zones (shown as a semi-transparent black overlay) instead of inclusion zones (red overlay). A "Toggle Include/Exclude" button lets you switch any selected shape between include and exclude after drawing. When both include and exclude shapes overlap on the canvas, exclude takes priority in the final region mask — meaning `Paint Selected Region` will generate new layers everywhere *except* the excluded areas.
+- **Region Paint total budget fix** — Fixed the Total Budget input box being effectively ignored. Previously, changing the Total Budget value after selecting a Quality Profile had no effect because `prepare_first_pass` always read `stopAt` directly from the profile INI file instead of from the user's input. Now the user's Total Budget value is correctly passed through to the state manager, and all budget checks (`Start First Pass` guard, `Paint Selected Region` guard, and the `Remaining` display) respect the input-box value.
+
 ## v1.9.1 / 2026-06-17
 
 - **Region Paint checkpoints** — Every pass (First Pass and each Paint Selected Region) now saves an independent checkpoint JSON, preview, and heatmap under `checkpoints/` with unique `passN_attemptM` naming. Users can freely switch between any past checkpoint via the Pass History list without losing data.
