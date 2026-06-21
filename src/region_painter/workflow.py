@@ -32,9 +32,13 @@ ProgressCallback = Callable[[str], None]
 
 def prepare_first_pass(
     image_path, settings_path, first_layers, output_dir,
-    exe_path="", on_progress=None,
+    exe_path="", total_budget=None, on_progress=None,
 ):
-    """Prepare first pass. Returns dict with cmd, paths, state. Does NOT run exe."""
+    """Prepare first pass. Returns dict with cmd, paths, state. Does NOT run exe.
+
+    If total_budget is provided (e.g. from the UI input box), it takes
+    precedence over the stopAt value in the profile INI file.
+    """
     image_path = Path(image_path).resolve()
     settings_path = Path(settings_path).resolve()
     output_dir = Path(output_dir)
@@ -42,7 +46,8 @@ def prepare_first_pass(
     if not exe.exists():
         return {"error": f"Generator exe not found: {exe}"}
     values = parse_settings(settings_path)
-    total_budget = int(values.get("stopAt", 3000))
+    if total_budget is None:
+        total_budget = int(values.get("stopAt", 3000))
     max_resolution = int(values.get("maxResolution", 1200))
     max_preview_size = int(values.get("maxPreviewSize", 500))
     first_layers = min(first_layers, total_budget)
