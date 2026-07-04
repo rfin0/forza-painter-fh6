@@ -50,6 +50,8 @@ SETTING_KEYS: tuple[str, ...] = (
     "saveAt",
     "saveEvery",
     "stopAt",
+    "enableMultiPrimitiveShapes",
+    "shapeWeights",
 )
 
 _GENERATOR_ENV_KEEP = {
