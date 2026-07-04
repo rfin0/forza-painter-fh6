@@ -873,6 +873,20 @@ class App:
         self.custom_mutated_samples = StringVar()
         self.custom_save_at = StringVar()
         self.custom_preprocess_mode = StringVar(value="none")
+        self.custom_max_preview_size = StringVar()
+        self.custom_max_threads = StringVar()
+        self.custom_enable_progressive = StringVar(value="false")
+        self.custom_progressive_start = StringVar()
+        self.custom_progressive_end = StringVar()
+        self.custom_progressive_transition = StringVar()
+        self.custom_progressive_curve = StringVar()
+        self.custom_error_grid_size = StringVar()
+        self.custom_force_opaque = StringVar(value="false")
+        self.custom_posterize_levels = StringVar()
+        self.custom_preview_every = StringVar()
+        self.custom_save_every = StringVar()
+        self.custom_multi_primitive = StringVar(value="false")
+        self.custom_shape_weights = StringVar()
         self.translated = []
         self.detailed_log_lock = threading.Lock()
         self.detailed_log_lines = deque()
@@ -1599,12 +1613,20 @@ class App:
         custom_grid = Frame(custom_section)
         custom_grid.pack(fill=X, padx=10, pady=(0, 6))
         self.custom_fields = []
+
         custom_specs = [
             ("custom_layers", self.custom_stop_at),
             ("custom_resolution", self.custom_max_resolution),
+            ("custom_preview_size", self.custom_max_preview_size),
+            ("custom_threads", self.custom_max_threads),
             ("custom_random", self.custom_random_samples),
             ("custom_mutated", self.custom_mutated_samples),
+            ("custom_error_grid", self.custom_error_grid_size),
+            ("custom_posterize", self.custom_posterize_levels),
+            ("custom_preview_every", self.custom_preview_every),
+            ("custom_save_every", self.custom_save_every),
             ("custom_save_at", self.custom_save_at),
+            ("custom_shape_weights", self.custom_shape_weights),
         ]
         for row_index, (key, variable) in enumerate(custom_specs):
             label = self._label(custom_grid, key, anchor="w")
@@ -1612,9 +1634,37 @@ class App:
             entry = Entry(custom_grid, textvariable=variable, width=18)
             entry.grid(row=row_index, column=1, sticky="ew", pady=1)
             self.custom_fields.append(entry)
-        custom_grid.columnconfigure(1, weight=1)
-        preprocess_widget = self._field(custom_grid, "preprocess_mode", self.custom_preprocess_mode, row=len(custom_specs), values=["none", "luma_band"], readonly=True)
+        bool_specs = [
+            ("custom_force_opaque", self.custom_force_opaque, row_index + 1),
+            ("custom_multi_primitive", self.custom_multi_primitive, row_index + 2),
+            ("custom_enable_progressive", self.custom_enable_progressive, row_index + 3),
+        ]
+        for key, variable, row in bool_specs:
+            widget = self._field(custom_grid, key, variable, row=row, values=["false", "true"], readonly=True)
+            self.custom_fields.append(widget)
+        progressive_row = row_index + 4
+        for pi, (key, variable) in enumerate([
+            ("custom_progressive_start", self.custom_progressive_start),
+            ("custom_progressive_end", self.custom_progressive_end),
+        ]):
+            label = self._label(custom_grid, key, anchor="w")
+            label.grid(row=progressive_row + pi, column=0, sticky="w", pady=1, padx=(0, 8))
+            entry = Entry(custom_grid, textvariable=variable, width=18)
+            entry.grid(row=progressive_row + pi, column=1, sticky="ew", pady=1)
+            self.custom_fields.append(entry)
+        for pi, (key, variable) in enumerate([
+            ("custom_progressive_transition", self.custom_progressive_transition),
+            ("custom_progressive_curve", self.custom_progressive_curve),
+        ]):
+            label = self._label(custom_grid, key, anchor="w")
+            label.grid(row=progressive_row + 2 + pi, column=0, sticky="w", pady=1, padx=(0, 8))
+            entry = Entry(custom_grid, textvariable=variable, width=18)
+            entry.grid(row=progressive_row + 2 + pi, column=1, sticky="ew", pady=1)
+            self.custom_fields.append(entry)
+        pre_row = progressive_row + 4
+        preprocess_widget = self._field(custom_grid, "preprocess_mode", self.custom_preprocess_mode, row=pre_row, values=["none", "luma_band"], readonly=True)
         self.custom_fields.append(preprocess_widget)
+        custom_grid.columnconfigure(1, weight=1)
         custom_actions = Frame(custom_section)
         custom_actions.pack(fill=X, padx=10, pady=(0, 8))
         self._button(custom_actions, "save_custom_preset", self.save_custom_preset).pack(side=LEFT)
@@ -3254,6 +3304,7 @@ class App:
         self._label(step4, "step_import_hint", anchor="w", justify=LEFT, wraplength=500).pack(fill=X, padx=10, pady=(8, 4))
         self._label(step4, "easy_import_hint", anchor="w", justify=LEFT, wraplength=500, fg="#555").pack(fill=X, padx=10, pady=4)
         self._label(step4, "admin_note", anchor="w", justify=LEFT, wraplength=500, fg="#8a5300").pack(fill=X, padx=10, pady=4)
+        self._label(step4, "import_shape_note", anchor="w", justify=LEFT, wraplength=500, fg=Theme.WARN).pack(fill=X, padx=10, pady=4)
         actions = Frame(step4)
         actions.pack(fill=X, padx=10, pady=12)
         self._button(actions, "import_json", self.start_import, font=("Segoe UI", 13, "bold"), height=2).pack(side=LEFT, fill=X, expand=True)
@@ -3406,9 +3457,23 @@ class App:
             values = item.get("values", {})
             self.custom_stop_at.set(values.get("stopAt", "3000"))
             self.custom_max_resolution.set(values.get("maxResolution", "1200"))
+            self.custom_max_preview_size.set(values.get("maxPreviewSize", "500"))
+            self.custom_max_threads.set(values.get("maxThreads", "0"))
             self.custom_random_samples.set(values.get("randomSamples", "3000"))
             self.custom_mutated_samples.set(values.get("mutatedSamples", "1000"))
+            self.custom_error_grid_size.set(values.get("errorGridSize", "64"))
+            self.custom_posterize_levels.set(values.get("posterizeLevels", "10"))
+            self.custom_preview_every.set(values.get("previewEvery", "10"))
+            self.custom_save_every.set(values.get("saveEvery", "10"))
             self.custom_save_at.set(values.get("saveAt", values.get("stopAt", "3000")))
+            self.custom_shape_weights.set(values.get("shapeWeights", "1,1,1"))
+            self.custom_force_opaque.set(values.get("forceOpaqueShapes", "false"))
+            self.custom_multi_primitive.set(values.get("enableMultiPrimitiveShapes", "false"))
+            self.custom_enable_progressive.set(values.get("enableProgressiveSampling", "false"))
+            self.custom_progressive_start.set(values.get("progressiveSamplingStart", ""))
+            self.custom_progressive_end.set(values.get("progressiveSamplingEnd", ""))
+            self.custom_progressive_transition.set(values.get("progressiveSamplingTransition", ""))
+            self.custom_progressive_curve.set(values.get("progressiveSamplingCurve", ""))
             self.custom_preprocess_mode.set(values.get("preprocessMode", "none"))
 
     def _sync_custom_state(self):
@@ -3428,10 +3493,24 @@ class App:
         custom = {
             "stopAt": self.custom_stop_at.get(),
             "maxResolution": self.custom_max_resolution.get(),
+            "maxPreviewSize": self.custom_max_preview_size.get(),
+            "maxThreads": self.custom_max_threads.get(),
             "randomSamples": self.custom_random_samples.get(),
             "mutatedSamples": self.custom_mutated_samples.get(),
+            "errorGridSize": self.custom_error_grid_size.get(),
+            "forceOpaqueShapes": self.custom_force_opaque.get(),
+            "posterizeLevels": self.custom_posterize_levels.get(),
+            "previewEvery": self.custom_preview_every.get(),
+            "saveEvery": self.custom_save_every.get(),
             "saveAt": self.custom_save_at.get(),
             "preprocessMode": self.custom_preprocess_mode.get(),
+            "enableMultiPrimitiveShapes": self.custom_multi_primitive.get(),
+            "shapeWeights": self.custom_shape_weights.get(),
+            "enableProgressiveSampling": self.custom_enable_progressive.get(),
+            "progressiveSamplingStart": self.custom_progressive_start.get(),
+            "progressiveSamplingEnd": self.custom_progressive_end.get(),
+            "progressiveSamplingTransition": self.custom_progressive_transition.get(),
+            "progressiveSamplingCurve": self.custom_progressive_curve.get(),
         }
         if not custom["saveAt"] and custom["stopAt"]:
             custom["saveAt"] = custom["stopAt"]

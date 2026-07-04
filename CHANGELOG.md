@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9.4 / 2026-07-04
+
+- **Multi-shape generation & import** — The GPU generator now fits rectangles and triangles in addition to the previously supported ellipses when converting images to geometry. All three shape types are correctly written to the FH6 layer table during import with proper shape IDs, rotation, and skew values.
+- **Custom settings UI expanded** — The Custom Settings panel now exposes all 20 generator parameters including max threads, preview size, error grid, posterize levels, shape weights, multi-primitive toggle, force opaque, progressive sampling, and preprocess mode. All values are saved and restored per-preset.
+- **Config presets updated** — All 7 built-in quality presets now include `enableMultiPrimitiveShapes` and `shapeWeights` keys for multi-shape generation support.
+- **Non-ellipse shape notice** — Added a warning in the Import page advising users to save and reopen the vinyl group after importing designs that contain rectangles or triangles, as FH6 displays all layers as ellipses until reload.
+- **Scale and rotation fixes** — Fixed scale divisor logic for rectangles and triangles so shapes render at the correct in-game size. Rectangle rotation is now preserved through geometry JSON normalization.
+
 ## v1.9.2 / 2026-06-21
 
 - **Region Paint exclude mode** — Added an "Exclude Mode" checkbox to the Region Paint selection tools. Check it to draw exclusion zones (shown as a semi-transparent black overlay) instead of inclusion zones (red overlay). A "Toggle Include/Exclude" button lets you switch any selected shape between include and exclude after drawing. When both include and exclude shapes overlap on the canvas, exclude takes priority in the final region mask — meaning `Paint Selected Region` will generate new layers everywhere *except* the excluded areas.
