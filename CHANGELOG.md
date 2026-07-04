@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.5 / 2026-07-04
+
+- **Rollback v1.9.4 changes** — Reverted multi-shape generation & import (rectangle/triangle support), expanded custom settings UI, and related preset updates. These features introduced regressions and have been rolled back to restore the v1.9.2 stable behavior.
+
 ## v1.9.2 / 2026-06-21
 
 - **Region Paint exclude mode** — Added an "Exclude Mode" checkbox to the Region Paint selection tools. Check it to draw exclusion zones (shown as a semi-transparent black overlay) instead of inclusion zones (red overlay). A "Toggle Include/Exclude" button lets you switch any selected shape between include and exclude after drawing. When both include and exclude shapes overlap on the canvas, exclude takes priority in the final region mask — meaning `Paint Selected Region` will generate new layers everywhere *except* the excluded areas.
