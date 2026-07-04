@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <code>v1.9.4</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
+  <code>v1.9.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>One-file EXE</code>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니다. 앱에서 생성, 미리보기, 가져오기를 한 번에 처리하며 일반 사용자는 Python, `.venv`, 배치 파일, 메모리 주소 입력이 필요 없습니다.
 
-> **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.9.4.exe`를 내려받아 바로 실행하세요.
+> **EXE 다운로드:** [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.9.2.exe`를 내려받아 바로 실행하세요.
 
 > **프리셋 마켓:** https://painter6.com 에서 공유 이미지, 프리셋, JSON 패키지를 둘러보거나 앱 안의 새 마켓 배너로 바로 열 수 있습니다.
 
@@ -45,7 +45,7 @@ PNG/JPG/BMP 이미지를 Forza Horizon 6 비닐 그룹 레이어로 변환합니
 
 ## 빠른 시작
 
-1. [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.9.4.exe`를 내려받습니다.
+1. [Releases](https://github.com/bvzrays/forza-painter-fh6/releases)에서 `forza-painter-fh6-v1.9.2.exe`를 내려받습니다.
 2. EXE를 쓰기 가능한 일반 폴더에 둡니다. 예: `Desktop\forza-painter-fh6`.
 3. EXE를 더블 클릭합니다. FH6 가져오기에서 Windows가 프로세스 접근을 막으면 관리자 권한으로 실행하세요.
 4. FH6에서 `Create Vinyl Group` / `Vinyl Group Editor`를 열고 sphere 템플릿을 불러온 뒤 `Ungroup`합니다.
@@ -163,14 +163,6 @@ EXE 옆에 생길 수 있는 외부 폴더:
 ## 변경 기록
 
 여기에는 버전 번호가 있는 릴리스만 남깁니다. 앱 업데이트 안내에 쓰이는 전체 기록은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
-
-### v1.9.4 / 2026-07-04
-
-- **다중 도형 생성 및 가져오기** — GPU 생성기가 이미지를 도형으로 변환할 때 기존에 지원하던 타원 외에도 직사각형과 삼각형으로 피팅합니다. 세 가지 도형 유형 모두 가져오기 시 올바른 도형 ID, 회전 및 기울기 값으로 FH6 레이어 테이블에 기록됩니다.
-- **사용자 설정 UI 확장** — 사용자 설정 패널에 최대 스레드, 미리보기 크기, 오차 그리드, 포스터화 레벨, 도형 가중치, 다중 도형 토글, 불투명 강제, 점진적 샘플링, 전처리 모드 등 20개의 생성기 매개변수가 모두 표시됩니다. 모든 값은 프리셋별로 저장 및 복원됩니다.
-- **설정 프리셋 업데이트** — 7개의 내장 품질 프리셋 모두에 다중 도형 생성을 위한 `enableMultiPrimitiveShapes` 및 `shapeWeights` 키가 추가되었습니다.
-- **비타원 도형 안내** — 직사각형이나 삼각형이 포함된 디자인을 가져온 후에는 비닐 그룹을 저장하고 다시 열어야 한다는 경고가 가져오기 페이지에 추가되었습니다. FH6는 다시 로드하기 전까지 모든 레이어를 타원으로 표시하기 때문입니다.
-- **크기 및 회전 수정** — 직사각형과 삼각형의 크기 계산 로직을 수정하여 게임 내에서 올바른 크기로 렌더링됩니다. 직사각형 회전이 기하 JSON 정규화 과정에서 보존됩니다.
 
 ### v1.9.2 / 2026-06-21
 
