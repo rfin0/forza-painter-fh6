@@ -9,13 +9,11 @@ from utils import clamp_byte
 
 class ShapeType(IntEnum):
     RECTANGLE = 1
-    TRIANGLE = 2
     ROTATED_ELLIPSE = 16
 
 
 # Backwards-compatible module-level aliases.
 RECTANGLE = ShapeType.RECTANGLE
-TRIANGLE = ShapeType.TRIANGLE
 ROTATED_ELLIPSE = ShapeType.ROTATED_ELLIPSE
 
 
@@ -24,9 +22,6 @@ TYPE_ALIASES = {
     "rect": ShapeType.RECTANGLE,
     "rectangle": ShapeType.RECTANGLE,
     "box": ShapeType.RECTANGLE,
-    "2": ShapeType.TRIANGLE,
-    "triangle": ShapeType.TRIANGLE,
-    "tri": ShapeType.TRIANGLE,
     "16": ShapeType.ROTATED_ELLIPSE,
     "ellipse": ShapeType.ROTATED_ELLIPSE,
     "ellipsis": ShapeType.ROTATED_ELLIPSE,
@@ -85,7 +80,7 @@ def drawable_shape_count(path):
         color = shape.get("color", [])
         if len(color) == 4 and int(color[3]) <= 0:
             continue
-        if int(shape.get("type", 0)) in (ShapeType.RECTANGLE, ShapeType.TRIANGLE, ShapeType.ROTATED_ELLIPSE):
+        if int(shape.get("type", 0)) in (ShapeType.RECTANGLE, ShapeType.ROTATED_ELLIPSE):
             count += 1
     return count
 
@@ -112,7 +107,7 @@ def _normalize_shape(shape):
     if not isinstance(shape, dict):
         return None
     type_id = _normalize_type(_pick(shape, "type", "Type", "shapeType", "ShapeType", "primitive", "Primitive"))
-    if type_id not in (ShapeType.RECTANGLE, ShapeType.TRIANGLE, ShapeType.ROTATED_ELLIPSE):
+    if type_id not in (ShapeType.RECTANGLE, ShapeType.ROTATED_ELLIPSE):
         return None
     data = _normalize_data(shape, type_id)
     color = _normalize_color(_pick(shape, "color", "Color", "colour", "Colour", "rgba", "RGBA"))
@@ -130,10 +125,7 @@ def _normalize_type(value):
     if isinstance(value, bool) or value is None:
         return None
     if isinstance(value, (int, float)):
-        raw = int(value)
-        if raw == 0:
-            return ShapeType.RECTANGLE
-        return raw
+        return int(value)
     key = str(value).strip().lower().replace("-", "_")
     key = " ".join(key.split())
     return TYPE_ALIASES.get(key) or TYPE_ALIASES.get(key.replace(" ", "_"))
@@ -167,7 +159,7 @@ def _normalize_data(shape, type_id):
         return None
 
     if type_id == ShapeType.RECTANGLE:
-        return [round(x), round(y), max(0.0, w), max(0.0, h), round(rot) % 360]
+        return [round(x), round(y), max(0.0, w), max(0.0, h)]
     return [round(x), round(y), max(1.0, w), max(1.0, h), round(rot) % 360]
 
 
@@ -200,7 +192,7 @@ def _looks_like_background(shape):
     if int(shape.get("type", 0)) != ShapeType.RECTANGLE:
         return False
     data = shape.get("data", [])
-    if len(data) < 4:
+    if len(data) != 4:
         return False
     return int(data[0]) == 0 and int(data[1]) == 0 and int(data[2]) > 0 and int(data[3]) > 0
 

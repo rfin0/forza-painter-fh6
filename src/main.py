@@ -18,7 +18,7 @@ import subprocess
 from native import *
 from internal_classes import *
 from game_profiles import iter_profiles, PROFILES
-from geometry_json import RECTANGLE, TRIANGLE, ROTATED_ELLIPSE, load_normalized_geometry
+from geometry_json import RECTANGLE, ROTATED_ELLIPSE, load_normalized_geometry
 import colorsys
 import os
 
@@ -26,8 +26,7 @@ from utils import load_cv2, parse_int
 
 FH6_DISCOVERED_TABLE_POINTER_DELTA = 0x1E
 FH6_CIRCLE_BASE_SIZE = 63.0
-FH6_RECTANGLE_BASE_SIZE = 63.0
-FH6_TRIANGLE_BASE_SIZE = 63.0
+FH6_RECTANGLE_BASE_SIZE = 127.0
 
 
 def is_admin():
@@ -154,27 +153,19 @@ def draw_memory_shape(pid: int, profile, shape: Shape, index: int, cLiveryLayerT
     pos_data = struct.pack('f', shape.x) + struct.pack('f', -shape.y)
     try:
         write_process_memory(pid, current_layer_address + profile.layer_position_offset, pos_data)
-        if shape.type_id == ROTATED_ELLIPSE:
-            scale_divisor = FH6_CIRCLE_BASE_SIZE
-        elif shape.type_id == TRIANGLE:
-            scale_divisor = FH6_TRIANGLE_BASE_SIZE
-        else:
-            scale_divisor = FH6_RECTANGLE_BASE_SIZE
-
+        scale_divisor = FH6_CIRCLE_BASE_SIZE if shape.type_id == ROTATED_ELLIPSE else FH6_RECTANGLE_BASE_SIZE
         scale_data = struct.pack('f', shape.w / scale_divisor) + struct.pack('f', shape.h / scale_divisor)
         write_process_memory(pid, current_layer_address + profile.layer_scale_offset, scale_data)
         rot_data = struct.pack('f', 360 - shape.rot_deg)
         write_process_memory(pid, current_layer_address + profile.layer_rotation_offset, rot_data)
         color_data = shape.color.get_struct()
         write_process_memory(pid, current_layer_address + profile.layer_color_offset, color_data)
-        skew_data = struct.pack('f', 0.0)
-        write_process_memory(pid, current_layer_address + profile.layer_skew_offset, skew_data)
         if shape.type_id == ROTATED_ELLIPSE:
-            write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, struct.pack('<H', 0x0066))
+            shape_id_data = struct.pack('B', 102)
+            write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, shape_id_data)
         elif shape.type_id == RECTANGLE:
-            write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, struct.pack('<H', 0x0065))
-        elif shape.type_id == TRIANGLE:
-            write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, struct.pack('<H', 0x0067))
+            shape_id_data = struct.pack('B', 101)
+            write_process_memory(pid, current_layer_address + profile.layer_shape_id_offset, shape_id_data)
         mask_flag = struct.pack('B', 1 if shape.is_mask else 0)
         write_process_memory(pid, current_layer_address + profile.layer_mask_offset, mask_flag)
     except:
@@ -202,7 +193,7 @@ def load_geometry(
         return
 
     # validation and build our collection of shapes
-    image_w, image_h = data['shapes'][0]['data'][2:4]
+    image_w, image_h = data['shapes'][0]['data'][2:]
     bg_r, bg_g, bg_b, bg_a = data['shapes'][0]['color']
     shapes = []
     
@@ -222,13 +213,9 @@ def load_geometry(
             r,g,b,a = shape['color']
             shapes.append(Shape(shape['type'], x, y, w, h, rot_deg, Color(r,g,b,a), False))
         elif shape['type'] == RECTANGLE:
-            x,y,w,h,rot_deg = shape['data']
+            x,y,w,h = shape['data']
             r,g,b,a = shape['color']
-            shapes.append(Shape(shape['type'], x, y, w, h, rot_deg, Color(r,g,b,a), False))
-        elif shape['type'] == TRIANGLE:
-            x,y,w,h,rot_deg = shape['data']
-            r,g,b,a = shape['color']
-            shapes.append(Shape(shape['type'], x, y, w, h, rot_deg, Color(r,g,b,a), False))
+            shapes.append(Shape(shape['type'], x, y, w, h, 0, Color(r,g,b,a), False))
         else:
             print("Skipping unsupported shape type {}.".format(shape.get("type")))
     if len(shapes) == 0:
@@ -254,24 +241,6 @@ def load_geometry(
                 x1 = int(round(shape.x + shape.w / 2))
                 y1 = int(round(shape.y + shape.h / 2))
                 preview = cv2.rectangle(preview, (x0, y0), (x1, y1), (shape.color.b, shape.color.g, shape.color.r), thickness=-1)
-            elif shape.type_id == TRIANGLE:
-                hw = shape.w / 2.0
-                hh = shape.h / 2.0
-                pts = np.array([
-                    [shape.x, shape.y - hh],
-                    [shape.x - hw, shape.y + hh],
-                    [shape.x + hw, shape.y + hh],
-                ], np.int32)
-                if shape.rot_deg != 0:
-                    rad = np.deg2rad(shape.rot_deg)
-                    cos_a, sin_a = np.cos(rad), np.sin(rad)
-                    cx, cy = shape.x, shape.y
-                    pts_float = pts.astype(np.float32) - [cx, cy]
-                    pts_rot = np.empty_like(pts_float)
-                    pts_rot[:, 0] = pts_float[:, 0] * cos_a - pts_float[:, 1] * sin_a
-                    pts_rot[:, 1] = pts_float[:, 0] * sin_a + pts_float[:, 1] * cos_a
-                    pts = (pts_rot + [cx, cy]).astype(np.int32)
-                preview = cv2.fillPoly(preview, [pts], (shape.color.b, shape.color.g, shape.color.r))
 
         if preview_enabled:
             print("Here is a preview of your image, click it then press any key to start!")
@@ -334,14 +303,11 @@ def load_geometry(
     # these boundary masks the design can look correct in the editor but save
     # with a blank cover, paste blank onto the car, or recover only after the
     # user manually moves the group.
-    # Mask pixel dimensions are scaled by 63/127 to compensate for the divisor
-    # change from 127→63, keeping the masks at the same physical on-screen size.
-    mask_scale = 63.0 / 127.0
     boundary_masks = [
-        Shape(1, -int(image_w//4 * mask_scale), int(image_h//2 * mask_scale), float(image_w//2 * mask_scale), float(image_h*1.5 * mask_scale), 0, Color(0,0,0,255), True),
-        Shape(1, int(image_w + image_w//4 * mask_scale), int(image_h//2 * mask_scale), float(image_w//2 * mask_scale), float(image_h*1.5 * mask_scale), 0, Color(0,0,0,255), True),
-        Shape(1, int(image_w//2 * mask_scale), -int(image_h//4 * mask_scale), float((image_w + image_w) * mask_scale), float(image_h//2 * mask_scale), 0, Color(0,0,0,255), True),
-        Shape(1, int(image_w//2 * mask_scale), int(image_h + image_h//4 * mask_scale), float((image_w + image_w) * mask_scale), float(image_h//2 * mask_scale), 0, Color(0,0,0,255), True),
+        Shape(1, -int(image_w//4), int(image_h//2), float(image_w//2), float(image_h*1.5), 0, Color(0,0,0,255), True),
+        Shape(1, image_w + int(image_w//4), int(image_h//2), float(image_w//2), float(image_h*1.5), 0, Color(0,0,0,255), True),
+        Shape(1, int(image_w//2), -int(image_h//4), float(image_w + image_w), float(image_h//2), 0, Color(0,0,0,255), True),
+        Shape(1, int(image_w//2), image_h + int(image_h//4), float(image_w + image_w), float(image_h//2), 0, Color(0,0,0,255), True),
     ]
     reserved_mask_layers = len(boundary_masks)
     drawable_capacity = max(0, min(int(current_livery_count), 3000) - reserved_mask_layers)
@@ -366,7 +332,7 @@ def load_geometry(
     
     # Enumerate every template slot. Any unused slot is hidden so larger templates
     # do not leave their original spheres visible after importing smaller JSON.
-    clear_shape = Shape(1, -10000, -10000, 0.063, 0.063, 0, Color(0, 0, 0, 0), False)
+    clear_shape = Shape(1, 0, 0, 0, 0, 0, Color(0, 0, 0, 0), False)
     for i in range(current_livery_count):
         shape = shapes[i] if i < len(shapes) else clear_shape
         if i == 0 or (i + 1) % 100 == 0 or i + 1 == current_livery_count:

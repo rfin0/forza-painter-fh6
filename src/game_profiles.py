@@ -22,7 +22,6 @@ class GameProfile:
     layer_scale_offset: int = 0x28
     layer_rotation_offset: int = 0x50
     layer_color_offset: int = 0x74
-    layer_skew_offset: int = 0x70
     layer_mask_offset: int = 0x78
     layer_shape_id_offset: int = 0x7A
 
