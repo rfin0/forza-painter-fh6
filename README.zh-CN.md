@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <code>v1.9.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>单文件 EXE</code>
+  <code>v1.9.4</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>单文件 EXE</code>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 把 PNG/JPG/BMP 图片转换成 Forza Horizon 6 的 Vinyl Group 图层。软件内完成生成、预览和导入，普通用户不需要 Python、`.venv`、批处理文件，也不需要手动填写内存地址。
 
-> **下载 EXE：** 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.9.2.exe`，直接运行。
+> **下载 EXE：** 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.9.4.exe`，直接运行。
 
 > **预设市场：** 可以在 https://painter6.com 浏览玩家分享的图片、预设和 JSON 包，也可以通过软件内的新市场横幅直接打开。
 
@@ -45,7 +45,7 @@
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.9.2.exe`。
+1. 从 [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) 下载 `forza-painter-fh6-v1.9.4.exe`。
 2. 把 EXE 放在普通可写目录里，例如 `Desktop\forza-painter-fh6`。
 3. 双击 EXE 启动。导入 FH6 时如果被 Windows 拦截进程访问，请用管理员身份运行 EXE。
 4. 在游戏里进入 `Create Vinyl Group` / `Vinyl Group Editor`，加载球形模板并 `Ungroup`。
@@ -162,6 +162,14 @@ EXE 旁边可能出现这些外部文件夹：
 ## 更新日志
 
 这里仅保留带版本号的发布记录。用于软件更新弹窗的完整记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+### v1.9.4 / 2026-07-04
+
+- **多图形生成与导入** — GPU 生成器在将图像转为几何图形时，除了原本就支持的椭圆以外，现在也会使用矩形和三角形进行拟合。导入时所有三种图形类型均以正确的图形 ID、旋转和倾斜值写入 FH6 图层表。
+- **自定义设置 UI 扩展** — 自定义设置面板现在展示全部 20 个生成器参数，包括最大线程数、预览尺寸、误差网格、色调分离等级、图形权重、多图元开关、强制不透明、渐进采样和预处理模式。所有值均可按预设保存和恢复。
+- **配置文件更新** — 全部 7 个内置品质预设现在都包含 `enableMultiPrimitiveShapes` 和 `shapeWeights` 键，用于支持多图形生成。
+- **非椭圆图形提示** — 在导入页面添加了警告提示，建议用户在导入包含矩形或三角形的设计后保存并重新打开涂装分组，因为 FH6 在重新加载前所有图层均显示为椭圆。
+- **缩放和旋转修复** — 修复了矩形和三角形的缩放除数逻辑，使图形在游戏中以正确大小渲染。矩形旋转现在通过几何 JSON 规范化得以保留。
 
 ### v1.9.2 / 2026-06-21
 

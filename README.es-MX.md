@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <code>v1.9.2</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>EXE de un solo archivo</code>
+  <code>v1.9.4</code> · <code>Windows</code> · <code>Forza Horizon 6</code> · <code>GPU/OpenCL</code> · <code>EXE de un solo archivo</code>
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
 
 Convierte imágenes PNG/JPG/BMP en capas de Grupo de Vinilo para Forza Horizon 6. La aplicación integra la generación, la vista previa y la importación en una sola ventana de escritorio; los usuarios normales no necesitan Python, `.venv`, archivos batch ni direcciones de memoria manuales.
 
-> **Descarga el EXE:** obtén `forza-painter-fh6-v1.9.2.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) y ejecútalo directamente.
+> **Descarga el EXE:** obtén `forza-painter-fh6-v1.9.4.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases) y ejecútalo directamente.
 
 > **Preset Market:** explora imágenes compartidas, presets y paquetes JSON en https://painter6.com o usa el nuevo banner del mercado dentro de la aplicación.
 
@@ -46,7 +46,7 @@ Convierte imágenes PNG/JPG/BMP en capas de Grupo de Vinilo para Forza Horizon 6
 
 ## Inicio rápido
 
-1. Descarga `forza-painter-fh6-v1.9.2.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases).
+1. Descarga `forza-painter-fh6-v1.9.4.exe` desde [Releases](https://github.com/bvzrays/forza-painter-fh6/releases).
 2. Coloca el EXE en una carpeta normal con permisos de escritura, por ejemplo `Desktop\forza-painter-fh6`.
 3. Haz doble clic en el EXE. Para importar a FH6, ejecútalo como administrador si Windows bloquea el acceso al proceso.
 4. En FH6, abre `Create Vinyl Group` / `Vinyl Group Editor`, carga una plantilla de esferas y luego usa `Ungroup`.
@@ -164,6 +164,14 @@ Estas carpetas pueden eliminarse cuando la app esté cerrada si quieres restable
 ## Changelog
 
 Aquí solo se conservan las entradas de versiones publicadas. Consulta [CHANGELOG.md](CHANGELOG.md) para ver el changelog que muestra el aviso de actualización de la app.
+### v1.9.4 / 2026-07-04
+
+- **Generación e importación multiforma** — El generador GPU ahora ajusta rectángulos y triángulos además de las elipses previamente soportadas al convertir imágenes en geometría. Los tres tipos de forma se escriben correctamente en la tabla de capas de FH6 durante la importación con los IDs de forma, rotación y sesgo adecuados.
+- **UI de configuración personalizada ampliada** — El panel de configuración personalizada ahora expone los 20 parámetros del generador, incluyendo hilos máximos, tamaño de vista previa, cuadrícula de error, niveles de posterización, pesos de formas, alternancia de múltiples primitivas, opacidad forzada, muestreo progresivo y modo de preprocesamiento. Todos los valores se guardan y restauran por preset.
+- **Presets de configuración actualizados** — Los 7 presets de calidad integrados ahora incluyen las claves `enableMultiPrimitiveShapes` y `shapeWeights` para soportar la generación multiforma.
+- **Aviso de formas no elípticas** — Se agregó una advertencia en la página de importación que recomienda guardar y volver a abrir el grupo de vinilos después de importar diseños que contengan rectángulos o triángulos, ya que FH6 muestra todas las capas como elipses hasta que se recarga.
+- **Correcciones de escala y rotación** — Se corrigió la lógica del divisor de escala para rectángulos y triángulos para que las formas se rendericen con el tamaño correcto en el juego. La rotación de rectángulos ahora se conserva mediante la normalización del JSON de geometría.
+
 ### v1.9.2 / 2026-06-21
 
 - **Modo de exclusión en Region Paint** — Nueva casilla "Modo de exclusión" para dibujar zonas de exclusión (superposición negra) junto con zonas de inclusión (superposición roja). La exclusión tiene prioridad en áreas superpuestas. Alterna cualquier forma seleccionada con el botón "Alternar inclusión/exclusión".
