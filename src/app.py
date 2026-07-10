@@ -72,13 +72,14 @@ from i18n import tr
 from text.ui.compat import TextVinylThemeAdapter
 from text.ui.workspace import TextVinylWorkspace
 
-LANGUAGES = { 
+LANGUAGES = {
     "English": "en",
     "Português (Brasil)": "pt-br",
     "中文": "zh",
     "中文 (繁體)": "zh-tw",
     "한국어": "ko",
     "Español": "es",
+    "Русский": "ru",
 }
 
 ETA_MAX_PROGRESS_SAMPLES = 400
